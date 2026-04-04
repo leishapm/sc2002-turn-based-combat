@@ -15,6 +15,8 @@ public abstract class Character {
     protected int defense;
     protected int speed;
 
+    private boolean stunned;
+
     protected List<Effects> activeEffects;
     protected List<Actions> availableActions;
 
@@ -35,15 +37,18 @@ public abstract class Character {
 
     // applies all active effects at the start of the character's turn
     public void applyEffects() {
+        // reset temporary states before applying effects
+        this.stunned = false;
+
         Iterator<Effects> iterator = activeEffects.iterator();
 
         while (iterator.hasNext()) {
             Effects effect = iterator.next();
 
-            effect.tick(this); // apply effect behaviour
+            effect.tick(this);
 
             if (effect.isExpired()) {
-                iterator.remove(); // remove effect when duration ends
+                iterator.remove();
             }
         }
     }
@@ -77,7 +82,8 @@ public abstract class Character {
 
     // handles incoming damage and ensures hp doesn't go below 0
     public void takeDamage(int damage) {
-        hp -= damage;
+        int finalDamage = Math.max(0, damage - defense);
+        hp -= finalDamage;
 
         if (hp < 0) {
             hp = 0;
@@ -92,6 +98,16 @@ public abstract class Character {
     // checks if character is still alive
     public boolean isAlive() {
         return hp > 0;
+    }
+
+    // stun handling
+
+    public void setStunned(boolean stunned) {
+        this.stunned = stunned;
+    }
+
+    public boolean isStunned() {
+        return stunned;
     }
 
     // getters
