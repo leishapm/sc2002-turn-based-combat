@@ -1,6 +1,7 @@
 package combatarena.actions;
 
 import combatarena.entities.Character;
+import combatarena.util.SkillsResult;
 
 public abstract class Actions {
 
@@ -12,6 +13,9 @@ public abstract class Actions {
 
     // executes the action and returns the result (damage, effects, etc.)
     public abstract SkillsResult execute(Character user, Character target);
+
+    // returns description of action (for UI/logging)
+    public abstract String info();
 
     public String getName() {
         return name;
