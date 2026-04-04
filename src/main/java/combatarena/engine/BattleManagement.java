@@ -62,7 +62,17 @@ public class BattleManagement {
             // reduce cooldown only if character gets to act
             current.decrementCooldown();
 
-            // action execution will be triggered externally (UI / AI)
+            // minimal safe execution (no dependency on teammate code)
+            Actions action = current.getAvailableActions().get(0);
+            Character target;
+
+            if (current instanceof Enemy) {
+                target = players.get(0);
+            } else {
+                target = enemies.get(0);
+            }
+
+            executeTurn(current, action, target);
         }
     }
 
@@ -75,15 +85,12 @@ public class BattleManagement {
     // applies damage, buffs, and effects
     private void applyResult(Character target, SkillsResult result) {
 
-        // apply damage
         target.takeDamage(result.getDamageGiven());
 
-        // apply buff (treated as healing here)
         if (result.getBuffReceived() > 0) {
             target.heal(result.getBuffReceived());
         }
 
-        // apply effects
         for (Effects effect : result.getEffectsDone()) {
             target.addEffect(effect);
         }
@@ -127,7 +134,7 @@ public class BattleManagement {
 
     // spawns backup enemies when all current enemies are defeated
     public void checkAndSpawnBackup() {
-        if (selectedLevel.getBackupWave() != null && enemiesAliveCount() == 0) {
+        if (!selectedLevel.getBackupWave().isEmpty() && enemiesAliveCount() == 0) {
             enemies.addAll(selectedLevel.getBackupWave());
             initializeTurnOrder();
         }
