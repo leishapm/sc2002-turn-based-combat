@@ -17,6 +17,9 @@ public abstract class Character {
 
     private boolean stunned;
 
+    // store base defense to prevent infinite stacking
+    protected int baseDefense;
+
     protected List<Effects> activeEffects;
     protected List<Actions> availableActions;
 
@@ -27,6 +30,7 @@ public abstract class Character {
         this.maxHp = hp;
         this.attack = attack;
         this.defense = defense;
+        this.baseDefense = defense; // store original value
         this.speed = speed;
 
         this.activeEffects = new ArrayList<>();
@@ -39,6 +43,9 @@ public abstract class Character {
     public void applyEffects() {
         // reset temporary states before applying effects
         this.stunned = false;
+
+        // reset defense to base before reapplying buffs
+        this.defense = baseDefense;
 
         Iterator<Effects> iterator = activeEffects.iterator();
 
@@ -108,6 +115,12 @@ public abstract class Character {
 
     public boolean isStunned() {
         return stunned;
+    }
+
+    // defense buff support
+
+    public void addDefense(int amount) {
+        this.defense += amount;
     }
 
     // getters
