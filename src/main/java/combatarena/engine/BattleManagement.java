@@ -44,11 +44,10 @@ public class BattleManagement {
                 continue;
             }
 
-            boolean stunnedAtStart = current.isStunned();
-            current.updateEffects();
+           current.updateEffects();
 
-            if (stunnedAtStart) {
-                continue;
+           if (current.isStunned()) {
+               continue;
             }
 
             Character target = (current instanceof Enemy) ? player : getFirstAliveEnemy();
