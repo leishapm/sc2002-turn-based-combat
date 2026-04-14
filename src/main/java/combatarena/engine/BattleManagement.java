@@ -3,7 +3,7 @@ package combatarena.engine;
 import combatarena.entities.Character;
 import combatarena.entities.Player;
 import combatarena.entities.Enemy;
-import combatarena.actions.Actions;
+import combatarena.actions.Action;
 import combatarena.util.ActionResult;
 import combatarena.effects.Effects;
 import combatarena.level.Level;
@@ -63,7 +63,7 @@ public class BattleManagement {
             current.decrementCooldown();
 
             // minimal safe execution (no dependency on teammate code)
-            Actions action = current.getAvailableActions().get(0);
+            Action action = current.getAvailableActions().get(0);
             Character target;
 
             if (current instanceof Enemy) {
@@ -77,7 +77,7 @@ public class BattleManagement {
     }
 
     // executes an action and applies result
-    public void executeTurn(Character attacker, Actions action, Character target) {
+    public void executeTurn(Character attacker, Action action, Character target) {
         ActionResult result = action.execute(attacker, target);
         applyResult(target, result);
     }
