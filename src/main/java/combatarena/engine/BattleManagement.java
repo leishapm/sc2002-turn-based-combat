@@ -5,7 +5,7 @@ import combatarena.entities.Player;
 import combatarena.entities.Enemy;
 import combatarena.actions.Action;
 import combatarena.util.ActionResult;
-import combatarena.effects.Effects;
+import combatarena.effects.StatusEffect;
 import combatarena.level.Level;
 
 import java.util.ArrayList;
@@ -83,7 +83,7 @@ public class BattleManagement {
     }
 
     // applies damage, buffs, and effects
-    private void applyResult(Character target, SkillsResult result) {
+    private void applyResult(Character target, ActionResult result) {
 
         target.takeDamage(result.getDamageGiven());
 
@@ -91,7 +91,7 @@ public class BattleManagement {
             target.heal(result.getBuffReceived());
         }
 
-        for (Effects effect : result.getEffectsDone()) {
+        for (StatusEffect effect : result.getEffectsDone()) {
             target.addEffect(effect);
         }
     }
