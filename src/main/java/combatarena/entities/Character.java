@@ -20,8 +20,8 @@ public abstract class Character {
     // store base defense to prevent infinite stacking
     protected int baseDefense;
 
-    protected List<Effects> activeEffects;
-    protected List<Actions> availableActions;
+    protected List<StatusEffect> activeEffects;
+    protected List<Action> availableActions;
 
     protected int specialSkillCooldown;
 
@@ -47,7 +47,7 @@ public abstract class Character {
         // reset defense to base before reapplying buffs
         this.defense = baseDefense;
 
-        Iterator<Effects> iterator = activeEffects.iterator();
+        Iterator<StatusEffect> iterator = activeEffects.iterator();
 
         while (iterator.hasNext()) {
             StatusEffect effect = iterator.next();
@@ -145,7 +145,7 @@ public abstract class Character {
         return speed;
     }
 
-    public List<Actions> getAvailableActions() {
+    public List<Action> getAvailableActions() {
         return availableActions;
     }
 }
