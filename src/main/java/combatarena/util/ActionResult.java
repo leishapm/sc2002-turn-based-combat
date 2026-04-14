@@ -8,41 +8,30 @@ import java.util.List;
 public class ActionResult {
 
     private int damageGiven;
-    private int buffReceived;
-    private List<Effects> effectsDone;
+    private int healAmount;
+    private List<StatusEffect> effectsApplied;
 
-    public ActionResult() {
-        this.damageGiven = 0;
-        this.buffReceived = 0;
-        this.effectsDone = new ArrayList<>();
+    public ActionResult(int damage, int heal) {
+        this.damageGiven = damage;
+        this.healAmount = heal;
+        this.effectsApplied = new ArrayList<>();
     }
 
-    public ActionResult(int damageGiven) {
-        this.damageGiven = damageGiven;
-        this.buffReceived = 0;
-        this.effectsDone = new ArrayList<>();
-    }
-
-    public ActionResult(int damageGiven, int buffReceived) {
-        this.damageGiven = damageGiven;
-        this.buffReceived = buffReceived;
-        this.effectsDone = new ArrayList<>();
-    }
-
-    // add effect to result
-    public void addEffect(Effects effect) {
-        effectsDone.add(effect);
+    public ActionResult(int damage, int heal, List<StatusEffect> effects) {
+        this.damageGiven = damage;
+        this.healAmount = heal;
+        this.effectsApplied = (effects != null) ? effects : new ArrayList<>();
     }
 
     public int getDamageGiven() {
         return damageGiven;
     }
 
-    public int getBuffReceived() {
-        return buffReceived;
+    public int getHealAmount() {
+        return healAmount;
     }
 
-    public List<Effects> getEffectsDone() {
-        return effectsDone;
+    public List<StatusEffect> getEffectsApplied() {
+        return effectsApplied;
     }
 }
