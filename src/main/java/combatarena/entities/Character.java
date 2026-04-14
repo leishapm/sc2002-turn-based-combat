@@ -10,16 +10,16 @@ public abstract class Character {
 
     protected int hp;
     protected int attack;
-    protected int defence;
+    protected int defense;
     protected int speed;
     protected int maxHp;
     protected List<StatusEffect> activeEffects;
 
-    public Character(int hp, int attack, int defence, int speed) {
+    public Character(int hp, int attack, int defense, int speed) {
         this.hp = hp;
         this.maxHp = hp;
         this.attack = attack;
-        this.defence = defence;
+        this.defense = defense;
         this.speed = speed;
         this.activeEffects = new ArrayList<>();
     }
@@ -55,7 +55,7 @@ public abstract class Character {
 
     public void takeDamage(int dmg) {
 
-        int reducedDamage = Math.max(0, dmg - defence);
+        int reducedDamage = Math.max(0, dmg - defense);
         hp -= reducedDamage;
 
         if (hp < 0) {
@@ -72,12 +72,12 @@ public abstract class Character {
         }
     }
 
-    public void increaseDefence(int amount) {
-        defence += amount;
+    public void increaseDefense(int amount) {
+        defense += amount;
     }
 
-    public void decreaseDefence(int amount) {
-        defence -= amount;
+    public void decreaseDefense(int amount) {
+        defense -= amount;
     }
 
     public int getSpeed() {
@@ -88,8 +88,8 @@ public abstract class Character {
         return attack;
     }
 
-    public int getDefence() {
-        return defence;
+    public int getDefense() {
+        return defense;
     }
 
     public int getHp() {
