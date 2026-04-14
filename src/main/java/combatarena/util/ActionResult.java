@@ -24,7 +24,7 @@ public class ActionResult {
     }
 
     public void setDamageGiven(int damageGiven) {
-        this.damageGiven = damageGiven;
+        this.damageGiven = Math.max(0, damageGiven);
     }
 
     public int getHealAmount() {
@@ -32,7 +32,7 @@ public class ActionResult {
     }
 
     public void setHealAmount(int healAmount) {
-        this.healAmount = healAmount;
+        this.healAmount = Math.max(0, healAmount);
     }
 
     public int getBuffAmount() {
@@ -40,7 +40,7 @@ public class ActionResult {
     }
 
     public void setBuffAmount(int buffAmount) {
-        this.buffAmount = buffAmount;
+        this.buffAmount = Math.max(0, buffAmount);
     }
 
     public List<StatusEffect> getEffectsApplied() {
@@ -48,7 +48,9 @@ public class ActionResult {
     }
 
     public void addEffect(StatusEffect effect) {
-        this.effectsApplied.add(effect);
+        if (effect != null) {
+            this.effectsApplied.add(effect);
+        }
     }
 
     public List<Character> getDefeatedTargets() {
@@ -56,6 +58,8 @@ public class ActionResult {
     }
 
     public void addDefeatedTarget(Character target) {
-        this.defeatedTargets.add(target);
+        if (target != null) {
+            this.defeatedTargets.add(target);
+        }
     }
 }
