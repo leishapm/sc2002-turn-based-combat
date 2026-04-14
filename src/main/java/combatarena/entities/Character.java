@@ -15,6 +15,8 @@ public abstract class Character {
     protected int maxHp;
     protected List<StatusEffect> activeEffects;
 
+    private boolean stunned;
+
     public Character(int hp, int attack, int defense, int speed) {
         this.hp = hp;
         this.maxHp = hp;
@@ -22,6 +24,7 @@ public abstract class Character {
         this.defense = defense;
         this.speed = speed;
         this.activeEffects = new ArrayList<>();
+        this.stunned = false;
     }
 
     public void updateEffects() {
@@ -77,7 +80,15 @@ public abstract class Character {
     }
 
     public void decreaseDefense(int amount) {
-        defense -= amount;
+        defense = Math.max(0, defense - amount);
+    }
+
+    public void setStunned(boolean stunned) {
+        this.stunned = stunned;
+    }
+
+    public boolean isStunned() {
+        return stunned;
     }
 
     public int getSpeed() {
