@@ -4,12 +4,19 @@ import combatarena.entities.Enemy;
 import combatarena.entities.Character;
 import combatarena.actions.Action;
 
+import java.util.List;
+
 public class BasicAttackStrategy implements EnemyActionStrategy {
 
     @Override
     public Action chooseAction(Enemy enemy, Character target) {
 
-        // simplest logic: return first available action
-        return enemy.getAvailableActions().get(0);
+        List<Action> actions = enemy.getAvailableActions();
+
+        if (actions == null || actions.isEmpty()) {
+            return null;
+        }
+
+        return actions.get(0);
     }
 }
