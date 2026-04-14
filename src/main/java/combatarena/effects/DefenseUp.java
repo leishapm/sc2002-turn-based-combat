@@ -2,11 +2,11 @@ package combatarena.effects;
 
 import combatarena.entities.Character;
 
-public class DefenceUp extends Effects {
+public class DefenseUp extends Effects {
 
     private int bonus;
 
-    public DefenceUp(int duration, int bonus) {
+    public DefenseUp(int duration, int bonus) {
         super(duration);
         this.bonus = bonus;
     }
