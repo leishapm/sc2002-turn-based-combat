@@ -29,7 +29,7 @@ public class DefenceUp extends StatusEffect {
         target.decreaseDefense(bonus);
     }
 
-    public int getDefenceBonus() {
+    public int getDefenseBonus() {
         return bonus;
     }
 }
