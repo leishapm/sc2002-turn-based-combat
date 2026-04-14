@@ -1,7 +1,9 @@
 package combatarena.engine;
 
 import combatarena.actions.Action;
+import combatarena.actions.BasicAttack;
 import combatarena.actions.UseItemAction;
+import combatarena.actions.items.Item;
 import combatarena.entities.Character;
 import combatarena.entities.Enemy;
 import combatarena.entities.Player;
@@ -11,6 +13,7 @@ import combatarena.util.ActionResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class BattleManagement {
 
@@ -21,9 +24,11 @@ public class BattleManagement {
     private int roundNumber;
     private TurnOrderStrategy turnOrderStrategy;
     private Level selectedLevel;
+    private Scanner scanner;
 
     public BattleManagement(Player player, List<Enemy> enemies,
-                            TurnOrderStrategy strategy, Level level) {
+                            TurnOrderStrategy strategy, Level level,
+                            Scanner scanner) {
         this.player = player;
         this.enemies = enemies;
         this.turnOrderStrategy = strategy;
@@ -31,10 +36,13 @@ public class BattleManagement {
         this.turnOrderList = new ArrayList<>();
         this.currentTurnIndex = 0;
         this.roundNumber = 1;
+        this.scanner = scanner != null ? scanner : new Scanner(System.in);
     }
 
     public void startBattle() {
         turnOrderList = determineTurnOrder();
+        System.out.println("=== Battle Start ===");
+        printRoundHeader();
 
         while (!isBattleOver()) {
             checkAndSpawnBackup();
@@ -44,22 +52,26 @@ public class BattleManagement {
                 continue;
             }
 
-           current.updateEffects();
+            current.updateEffects();
 
-           if (current.isStunned()) {
-               continue;
-            }
-
-            Character target = (current instanceof Enemy) ? player : getFirstAliveEnemy();
-            if (target == null) {
+            if (current.isStunned()) {
+                System.out.println(current.getClass().getSimpleName() + " is stunned and skips the turn.");
                 continue;
             }
 
-            List<Character> targets = new ArrayList<>();
-            targets.add(target);
+            if (current instanceof Player playerEntity) {
+                executePlayerTurn(playerEntity);
+            } else {
+                if (player == null || !player.isAlive()) {
+                    continue;
+                }
 
-            ActionContext context = new ActionContext(current, targets, null);
-            executeTurn(context);
+                List<Character> targets = new ArrayList<>();
+                targets.add(player);
+
+                ActionContext context = new ActionContext(current, targets, null);
+                executeTurn(context);
+            }
         }
     }
 
@@ -101,14 +113,6 @@ public class BattleManagement {
                 return;
             }
             action = enemy.getActionStrategy().chooseAction(enemy, target);
-        } else if (user instanceof Player playerEntity) {
-            if (context.getSelectedItem() != null) {
-                action = new UseItemAction();
-            } else if (playerEntity.getAvailableActions() != null && !playerEntity.getAvailableActions().isEmpty()) {
-                action = playerEntity.getAvailableActions().get(0);
-            } else {
-                return;
-            }
         } else {
             return;
         }
@@ -119,6 +123,7 @@ public class BattleManagement {
 
         ActionResult result = action.execute(context);
         applyResult(target, result);
+        printActionOutcome(action.info(), user, target, result);
     }
 
     public void applyResult(Character target, ActionResult result) {
@@ -126,7 +131,8 @@ public class BattleManagement {
             return;
         }
 
-        target.takeDamage(result.getDamageGiven());
+        int actualDamage = target.takeDamage(result.getDamageGiven());
+        result.setDamageGiven(actualDamage);
 
         if (result.getHealAmount() > 0) {
             target.heal(result.getHealAmount());
@@ -150,6 +156,7 @@ public class BattleManagement {
             currentTurnIndex = 0;
             roundNumber++;
             turnOrderList = determineTurnOrder();
+            printRoundHeader();
         }
 
         return turnOrderList.get(currentTurnIndex++);
@@ -206,17 +213,212 @@ public class BattleManagement {
         return !hasBackup || selectedLevel.isBackupSpawnTriggered();
     }
 
-    private Character getFirstAliveEnemy() {
-        if (enemies == null) {
-            return null;
+    private void executePlayerTurn(Player player) {
+        List<Enemy> aliveEnemies = getAliveEnemies();
+        if (aliveEnemies.isEmpty()) {
+            return;
         }
 
-        for (Enemy e : enemies) {
-            if (e != null && e.isAlive()) {
-                return e;
+        System.out.println();
+        System.out.println("Player HP: " + player.getHp());
+        System.out.println("Enemies alive: " + aliveEnemies.size());
+
+        while (true) {
+            System.out.println();
+            System.out.println("Choose your action:");
+            System.out.println("1. Basic Attack");
+            System.out.println("2. Use Item");
+            System.out.println("3. Special Skill" + (player.isSkillAvailable() ? "" : " (cooldown " + player.getSpecialSkillCd() + ")"));
+            System.out.print("Enter choice: ");
+
+            String input = scanner.nextLine().trim();
+            Character target;
+            ActionResult result;
+
+            if ("1".equals(input)) {
+                target = chooseTarget(aliveEnemies);
+                Action action = new BasicAttack();
+                result = action.execute(new ActionContext(player, List.of(target), null));
+                applyResult(target, result);
+                printActionOutcome("Basic Attack", player, target, result);
+                break;
+            }
+
+            if ("2".equals(input)) {
+                Item item = chooseItem(player);
+                if (item == null) {
+                    System.out.println("No item selected.");
+                    continue;
+                }
+                if (item.requiresTarget()) {
+                    target = chooseTarget(aliveEnemies);
+                } else {
+                    target = player;
+                }
+                Action action = new UseItemAction();
+                result = action.execute(new ActionContext(player, List.of(target), item));
+                applyResult(target, result);
+                printActionOutcome(item.getClass().getSimpleName(), player, target, result);
+                break;
+            }
+
+            if ("3".equals(input)) {
+                if (!player.isSkillAvailable() || player.getSpecialSkill() == null) {
+                    System.out.println("Special Skill not available.");
+                    continue;
+                }
+                target = chooseTarget(aliveEnemies);
+                result = player.getSpecialSkill().execute(new ActionContext(player, List.of(target), null));
+                applyResult(target, result);
+                player.setSpecialSkillCd(3);
+                printActionOutcome("Special Skill", player, target, result);
+                break;
+            }
+
+            System.out.println("Invalid choice. Try again.");
+        }
+
+        player.decrementCooldown();
+    }
+
+    private Item chooseItem(Player player) {
+        List<Item> inventory = new ArrayList<>();
+        if (player.getInventory() != null) {
+            for (Item item : player.getInventory()) {
+                if (item != null && item.isAvailable()) {
+                    inventory.add(item);
+                }
             }
         }
 
-        return null;
+        if (inventory.isEmpty()) {
+            System.out.println("No items available.");
+            return null;
+        }
+
+        while (true) {
+            System.out.println();
+            System.out.println("Choose an item:");
+            for (int i = 0; i < inventory.size(); i++) {
+                Item item = inventory.get(i);
+                System.out.printf("%d. %s (x%d)%n", i + 1, item.getClass().getSimpleName(), item.getQuantity());
+            }
+            System.out.println("0. Cancel");
+            System.out.print("Enter choice: ");
+
+            String input = scanner.nextLine().trim();
+            if ("0".equals(input)) {
+                return null;
+            }
+
+            try {
+                int choice = Integer.parseInt(input);
+                if (choice >= 1 && choice <= inventory.size()) {
+                    return inventory.get(choice - 1);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+
+            System.out.println("Invalid choice. Try again.");
+        }
+    }
+
+    private void printActionOutcome(String actionName, Character user, Character target, ActionResult result) {
+        System.out.println();
+        System.out.println("Action result:");
+        System.out.println("- User: " + user.getClass().getSimpleName());
+        System.out.println("- Action: " + actionName);
+        System.out.println("- Target: " + target.getClass().getSimpleName());
+
+        if (result == null) {
+            System.out.println("- No result returned.");
+            return;
+        }
+
+        if (result.getDamageGiven() > 0) {
+            System.out.println("- Damage dealt: " + result.getDamageGiven());
+        }
+        if (result.getHealAmount() > 0) {
+            System.out.println("- Healed: " + result.getHealAmount());
+        }
+        if (!result.getEffectsApplied().isEmpty()) {
+            System.out.print("- Effects applied: ");
+            for (int i = 0; i < result.getEffectsApplied().size(); i++) {
+                System.out.print(result.getEffectsApplied().get(i).getClass().getSimpleName());
+                if (i < result.getEffectsApplied().size() - 1) {
+                    System.out.print(", ");
+                }
+            }
+            System.out.println();
+        }
+
+        System.out.println("- " + target.getClass().getSimpleName() + " HP: " + target.getHp());
+        if (!target.isAlive()) {
+            System.out.println("- " + target.getClass().getSimpleName() + " was defeated.");
+        }
+        System.out.println();
+    }
+
+    private void printRoundHeader() {
+        System.out.println();
+        System.out.println("=== Round " + roundNumber + " ===");
+        if (player != null && player.isAlive()) {
+            System.out.println("Player HP: " + player.getHp());
+        }
+        if (enemies != null && !enemies.isEmpty()) {
+            int aliveCount = 0;
+            for (Enemy enemy : enemies) {
+                if (enemy != null && enemy.isAlive()) {
+                    aliveCount++;
+                }
+            }
+            System.out.println("Enemies alive: " + aliveCount);
+        }
+    }
+
+    private Enemy chooseTarget(List<Enemy> enemies) {
+        if (enemies == null || enemies.isEmpty()) {
+            return null;
+        }
+
+        if (enemies.size() == 1) {
+            return enemies.get(0);
+        }
+
+        while (true) {
+            System.out.println();
+            System.out.println("Choose target:");
+            for (int i = 0; i < enemies.size(); i++) {
+                Enemy enemy = enemies.get(i);
+                System.out.printf("%d. %s - HP: %d%n", i + 1, enemy.getClass().getSimpleName(), enemy.getHp());
+            }
+            System.out.print("Enter choice: ");
+
+            String input = scanner.nextLine().trim();
+            try {
+                int choice = Integer.parseInt(input);
+                if (choice >= 1 && choice <= enemies.size()) {
+                    return enemies.get(choice - 1);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+
+            System.out.println("Invalid choice. Try again.");
+        }
+    }
+
+    private List<Enemy> getAliveEnemies() {
+        List<Enemy> alive = new ArrayList<>();
+        if (enemies == null) {
+            return alive;
+        }
+
+        for (Enemy enemy : enemies) {
+            if (enemy != null && enemy.isAlive()) {
+                alive.add(enemy);
+            }
+        }
+
+        return alive;
     }
 }

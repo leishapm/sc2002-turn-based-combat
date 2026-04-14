@@ -56,9 +56,9 @@ public abstract class Character {
         activeEffects.remove(effect);
     }
 
-    public void takeDamage(int damage) {
+    public int takeDamage(int damage) {
         if (invulnerable || damage <= 0) {
-            return;
+            return 0;
         }
 
         int finalDamage = Math.max(1, damage - defense);
@@ -67,6 +67,8 @@ public abstract class Character {
         if (hp < 0) {
             hp = 0;
         }
+
+        return finalDamage;
     }
 
     public void heal(int amount) {

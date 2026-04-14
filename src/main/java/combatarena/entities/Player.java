@@ -31,14 +31,22 @@ public class Player extends Character {
         return actions;
     }
 
+    public boolean isSkillAvailable() {
+        return specialSkillCd == 0;
+    }
+
+    public int getSpecialSkillCd() {
+        return specialSkillCd;
+    }
+
+    public void setSpecialSkillCd(int specialSkillCd) {
+        this.specialSkillCd = Math.max(0, specialSkillCd);
+    }
+
     public void decrementCooldown() {
         if (specialSkillCd > 0) {
             specialSkillCd--;
         }
-    }
-
-    public boolean isSkillAvailable() {
-        return specialSkillCd == 0;
     }
 
     public List<Item> getInventory() {

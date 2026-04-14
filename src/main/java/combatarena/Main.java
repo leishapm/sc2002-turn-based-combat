@@ -46,7 +46,8 @@ public class Main {
                 player,
                 enemies,
                 turnOrderStrategy,
-                level
+                level,
+                scanner
         );
 
         System.out.println();

@@ -9,6 +9,10 @@ public abstract class Item {
 
     public abstract ActionResult use(ActionContext context);
 
+    public boolean requiresTarget() {
+        return false;
+    }
+
     public void consume() {
         if (quantity > 0) {
             quantity--;
