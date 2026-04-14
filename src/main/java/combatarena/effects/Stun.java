@@ -2,7 +2,7 @@ package combatarena.effects;
 
 import combatarena.entities.Character;
 
-public class Stun extends Effects {
+public class Stun extends StatusEffect {
 
     public Stun(int duration) {
         super(duration);
