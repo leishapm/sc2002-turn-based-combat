@@ -2,7 +2,7 @@ package combatarena.engine;
 
 import combatarena.entities.Enemy;
 import combatarena.entities.Character;
-import combatarena.actions.Actions;
+import combatarena.actions.Action;
 
 import java.util.List;
 
