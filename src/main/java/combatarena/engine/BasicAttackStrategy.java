@@ -1,22 +1,14 @@
 package combatarena.engine;
 
-import combatarena.entities.Enemy;
-import combatarena.entities.Character;
 import combatarena.actions.Action;
-
-import java.util.List;
+import combatarena.actions.BasicAttack;
+import combatarena.entities.Character;
+import combatarena.entities.Enemy;
 
 public class BasicAttackStrategy implements EnemyActionStrategy {
 
     @Override
     public Action chooseAction(Enemy enemy, Character target) {
-
-        List<Action> actions = enemy.getAvailableActions();
-
-        if (actions == null || actions.isEmpty()) {
-            return null;
-        }
-
-        return actions.get(0);
+        return new BasicAttack();
     }
 }
