@@ -1,7 +1,7 @@
 package combatarena.actions;
 
-import combatarena.entities.Character;
-import combatarena.util.SkillsResult;
+import combatarena.engine.ActionContext;
+import combatarena.util.ActionResult;
 
 public abstract class Action {
 
@@ -11,11 +11,11 @@ public abstract class Action {
         this.name = name;
     }
 
-    // executes the action and returns the result (damage, effects, etc.)
-    public abstract ActionResult execute(Character user, Character target);
+    public abstract ActionResult execute(ActionContext context);
 
-    // returns description of action (for UI/logging)
-    public abstract String info();
+    public String info() {
+        return name;
+    }
 
     public String getName() {
         return name;
