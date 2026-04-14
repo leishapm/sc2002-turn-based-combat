@@ -17,6 +17,7 @@ public abstract class Character {
     protected List<StatusEffect> activeEffects;
 
     private boolean stunned;
+    private boolean invulnerable;
 
     public Character(int hp, int attack, int defense, int speed) {
         this.maxHp = hp;
@@ -26,23 +27,20 @@ public abstract class Character {
         this.speed = speed;
         this.activeEffects = new ArrayList<>();
         this.stunned = false;
+        this.invulnerable = false;
     }
 
- 
     public void addEffect(StatusEffect effect) {
         if (effect == null) return;
-
-        effect.apply(this); // apply once
+        effect.apply(this);
         activeEffects.add(effect);
     }
 
     public void updateEffects() {
-
         Iterator<StatusEffect> iterator = activeEffects.iterator();
 
         while (iterator.hasNext()) {
             StatusEffect effect = iterator.next();
-
             effect.tick(this);
 
             if (effect.isExpired()) {
@@ -54,14 +52,16 @@ public abstract class Character {
 
     public void removeEffect(StatusEffect effect) {
         if (effect == null) return;
-
         effect.remove(this);
         activeEffects.remove(effect);
     }
 
-   
     public void takeDamage(int damage) {
-        int finalDamage = Math.max(0, damage - defense);
+        if (invulnerable || damage <= 0) {
+            return;
+        }
+
+        int finalDamage = Math.max(1, damage - defense);
         hp -= finalDamage;
 
         if (hp < 0) {
@@ -83,7 +83,6 @@ public abstract class Character {
         return hp > 0;
     }
 
- 
     public boolean isStunned() {
         return stunned;
     }
@@ -92,6 +91,13 @@ public abstract class Character {
         this.stunned = stunned;
     }
 
+    public boolean isInvulnerable() {
+        return invulnerable;
+    }
+
+    public void setInvulnerable(boolean invulnerable) {
+        this.invulnerable = invulnerable;
+    }
 
     public void increaseDefense(int amount) {
         defense += amount;
@@ -108,7 +114,6 @@ public abstract class Character {
     public void decreaseAttack(int amount) {
         attack = Math.max(0, attack - amount);
     }
-
 
     public int getHp() {
         return hp;
@@ -134,7 +139,6 @@ public abstract class Character {
         return activeEffects;
     }
 
- 
     public String getStatusSummary() {
         return "HP: " + hp + "/" + maxHp +
                " | ATK: " + attack +
