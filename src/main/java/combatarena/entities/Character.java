@@ -1,151 +1,74 @@
 package combatarena.entities;
 
 import combatarena.effects.StatusEffect;
-import combatarena.actions.Action;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public abstract class Character {
 
     protected int hp;
     protected int maxHp;
-    protected int attack;
-    protected int defense;
+
+    protected int baseAttack;
+    protected int baseDefense;
     protected int speed;
 
-    private boolean stunned;
+    protected List<StatusEffect> activeEffects = new ArrayList<>();
 
-    // store base defense to prevent infinite stacking
-    protected int baseDefense;
-
-    protected List<StatusEffect> activeEffects;
-    protected List<Action> availableActions;
-
-    protected int specialSkillCooldown;
-
-    public Character(int hp, int attack, int defense, int speed) {
-        this.hp = hp;
-        this.maxHp = hp;
-        this.attack = attack;
-        this.defense = defense;
-        this.baseDefense = defense; // store original value
-        this.speed = speed;
-
-        this.activeEffects = new ArrayList<>();
-        this.availableActions = new ArrayList<>();
-
-        this.specialSkillCooldown = 0;
-    }
-
-    // applies all active effects at the start of the character's turn
-    public void applyEffects() {
-        // reset temporary states before applying effects
-        this.stunned = false;
-
-        // reset defense to base before reapplying buffs
-        this.defense = baseDefense;
-
-        Iterator<StatusEffect> iterator = activeEffects.iterator();
-
-        while (iterator.hasNext()) {
-            StatusEffect effect = iterator.next();
-
-            effect.tick(this);
-
-            if (effect.isExpired()) {
-                iterator.remove();
-            }
-        }
-    }
-
-    // adds a new effect to this character
-    public void addEffect(StatusEffect effect) {
-        activeEffects.add(effect);
-    }
-
-    // removes a specific effect if needed
-    public void removeEffect(StatusEffect effect) {
-        activeEffects.remove(effect);
-    }
-
-    // reduces cooldown only when this character actually takes a turn
-    public void decrementCooldown() {
-        if (specialSkillCooldown > 0) {
-            specialSkillCooldown--;
-        }
-    }
-
-    // sets cooldown when special skill is used
-    public void setCooldown(int turns) {
-        this.specialSkillCooldown = turns;
-    }
-
-    // checks if special skill is available
-    public boolean isSkillAvailable() {
-        return specialSkillCooldown == 0;
-    }
-
-    // handles incoming damage and ensures hp doesn't go below 0
-    public void takeDamage(int damage) {
-        int finalDamage = Math.max(0, damage - defense);
-        hp -= finalDamage;
-
-        if (hp < 0) {
-            hp = 0;
-        }
-    }
-
-    // heals the character but does not exceed max hp
-    public void heal(int amount) {
-        hp = Math.min(maxHp, hp + amount);
-    }
-
-    // checks if character is still alive
     public boolean isAlive() {
         return hp > 0;
     }
 
-    // stun handling
-
-    public void setStunned(boolean stunned) {
-        this.stunned = stunned;
-    }
-
-    public boolean isStunned() {
-        return stunned;
-    }
-
-    // defense buff support
-
-    public void addDefense(int amount) {
-        this.defense += amount;
-    }
-
-    // getters
-
-    public int getHp() {
-        return hp;
-    }
-
-    public int getMaxHp() {
-        return maxHp;
-    }
-
     public int getAttack() {
-        return attack;
+        int bonus = 0;
+        for (StatusEffect e : activeEffects) {
+            bonus += e.getAttackBonus();
+        }
+        return baseAttack + bonus;
     }
 
     public int getDefense() {
-        return defense;
+        int bonus = 0;
+        for (StatusEffect e : activeEffects) {
+            bonus += e.getDefenseBonus();
+        }
+        return baseDefense + bonus;
     }
 
-    public int getSpeed() {
-        return speed;
+    public void takeDamage(int dmg) {
+        hp -= dmg;
+        if (hp < 0) hp = 0;
     }
 
-    public List<Action> getAvailableActions() {
-        return availableActions;
+    public void heal(int amount) {
+        hp += amount;
+        if (hp > maxHp) hp = maxHp;
+    }
+
+    public void addEffect(StatusEffect effect) {
+        effect.apply(this);
+        activeEffects.add(effect);
+    }
+
+    public void applyEffects() {
+        List<StatusEffect> toRemove = new ArrayList<>();
+
+        for (StatusEffect e : activeEffects) {
+            e.tick(this);
+            if (e.isExpired()) {
+                e.remove(this);
+                toRemove.add(e);
+            }
+        }
+
+        activeEffects.removeAll(toRemove);
+    }
+
+    public boolean isStunned() {
+        for (StatusEffect e : activeEffects) {
+            if (e.isStun()) return true;
+        }
+        return false;
     }
 }
