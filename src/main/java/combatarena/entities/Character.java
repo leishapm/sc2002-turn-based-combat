@@ -9,22 +9,31 @@ import java.util.List;
 public abstract class Character {
 
     protected int hp;
+    protected int maxHp;
     protected int attack;
     protected int defense;
     protected int speed;
-    protected int maxHp;
+
     protected List<StatusEffect> activeEffects;
 
     private boolean stunned;
 
     public Character(int hp, int attack, int defense, int speed) {
-        this.hp = hp;
         this.maxHp = hp;
+        this.hp = hp;
         this.attack = attack;
         this.defense = defense;
         this.speed = speed;
         this.activeEffects = new ArrayList<>();
         this.stunned = false;
+    }
+
+ 
+    public void addEffect(StatusEffect effect) {
+        if (effect == null) return;
+
+        effect.apply(this); // apply once
+        activeEffects.add(effect);
     }
 
     public void updateEffects() {
@@ -34,7 +43,6 @@ public abstract class Character {
         while (iterator.hasNext()) {
             StatusEffect effect = iterator.next();
 
-            effect.apply(this);
             effect.tick(this);
 
             if (effect.isExpired()) {
@@ -44,22 +52,17 @@ public abstract class Character {
         }
     }
 
-    public void addEffect(StatusEffect effect) {
-        activeEffects.add(effect);
-    }
-
     public void removeEffect(StatusEffect effect) {
+        if (effect == null) return;
+
+        effect.remove(this);
         activeEffects.remove(effect);
     }
 
-    public boolean isAlive() {
-        return hp > 0;
-    }
-
-    public void takeDamage(int dmg) {
-
-        int reducedDamage = Math.max(0, dmg - defense);
-        hp -= reducedDamage;
+   
+    public void takeDamage(int damage) {
+        int finalDamage = Math.max(0, damage - defense);
+        hp -= finalDamage;
 
         if (hp < 0) {
             hp = 0;
@@ -67,6 +70,7 @@ public abstract class Character {
     }
 
     public void heal(int amount) {
+        if (amount <= 0) return;
 
         hp += amount;
 
@@ -74,6 +78,20 @@ public abstract class Character {
             hp = maxHp;
         }
     }
+
+    public boolean isAlive() {
+        return hp > 0;
+    }
+
+ 
+    public boolean isStunned() {
+        return stunned;
+    }
+
+    public void setStunned(boolean stunned) {
+        this.stunned = stunned;
+    }
+
 
     public void increaseDefense(int amount) {
         defense += amount;
@@ -83,16 +101,21 @@ public abstract class Character {
         defense = Math.max(0, defense - amount);
     }
 
-    public void setStunned(boolean stunned) {
-        this.stunned = stunned;
+    public void increaseAttack(int amount) {
+        attack += amount;
     }
 
-    public boolean isStunned() {
-        return stunned;
+    public void decreaseAttack(int amount) {
+        attack = Math.max(0, attack - amount);
     }
 
-    public int getSpeed() {
-        return speed;
+
+    public int getHp() {
+        return hp;
+    }
+
+    public int getMaxHp() {
+        return maxHp;
     }
 
     public int getAttack() {
@@ -103,11 +126,20 @@ public abstract class Character {
         return defense;
     }
 
-    public int getHp() {
-        return hp;
+    public int getSpeed() {
+        return speed;
     }
 
     public List<StatusEffect> getActiveEffects() {
         return activeEffects;
+    }
+
+ 
+    public String getStatusSummary() {
+        return "HP: " + hp + "/" + maxHp +
+               " | ATK: " + attack +
+               " | DEF: " + defense +
+               " | SPD: " + speed +
+               " | Effects: " + activeEffects.size();
     }
 }
