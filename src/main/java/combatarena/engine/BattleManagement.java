@@ -4,7 +4,7 @@ import combatarena.entities.Character;
 import combatarena.entities.Player;
 import combatarena.entities.Enemy;
 import combatarena.actions.Actions;
-import combatarena.util.SkillsResult;
+import combatarena.util.ActionResult;
 import combatarena.effects.Effects;
 import combatarena.level.Level;
 
@@ -78,7 +78,7 @@ public class BattleManagement {
 
     // executes an action and applies result
     public void executeTurn(Character attacker, Actions action, Character target) {
-        SkillsResult result = action.execute(attacker, target);
+        ActionResult result = action.execute(attacker, target);
         applyResult(target, result);
     }
 
