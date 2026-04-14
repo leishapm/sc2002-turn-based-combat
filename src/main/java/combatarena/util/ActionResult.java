@@ -1,6 +1,7 @@
 package combatarena.util;
 
-import combatarena.effects.Effects;
+import combatarena.effects.StatusEffect;
+import combatarena.entities.Character;
 
 import java.util.ArrayList;
 import java.util.List;
