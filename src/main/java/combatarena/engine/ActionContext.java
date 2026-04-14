@@ -1,7 +1,7 @@
 package combatarena.engine;
 
+import combatarena.actions.items.Item;
 import combatarena.entities.Character;
-import combatarena.items.Item;
 
 import java.util.List;
 
