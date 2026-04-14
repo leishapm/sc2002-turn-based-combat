@@ -16,16 +16,20 @@ public class BattleManagement {
     private List<Player> players;
     private List<Enemy> enemies;
     private TurnOrderStrategy turnOrderStrategy;
+    private EnemyActionStrategy enemyActionStrategy;
     private Level selectedLevel;
 
     private List<Character> turnOrderList;
     private int currentTurnIndex;
 
     public BattleManagement(List<Player> players, List<Enemy> enemies,
-                            TurnOrderStrategy strategy, Level level) {
+                            TurnOrderStrategy strategy, Level level,
+                            EnemyActionStrategy enemyStrategy) {
+
         this.players = players;
         this.enemies = enemies;
         this.turnOrderStrategy = strategy;
+        this.enemyActionStrategy = enemyStrategy;
         this.selectedLevel = level;
 
         this.turnOrderList = new ArrayList<>();
@@ -62,17 +66,25 @@ public class BattleManagement {
             // reduce cooldown only if character gets to act
             current.decrementCooldown();
 
-            // minimal safe execution (no dependency on teammate code)
-            Action action = current.getAvailableActions().get(0);
+            Action action;
             Character target;
 
             if (current instanceof Enemy) {
-                target = players.get(0);
+                Enemy enemy = (Enemy) current;
+
+                target = getFirstAlivePlayer();
+                action = enemyActionStrategy.chooseAction(enemy, target);
+
             } else {
-                target = enemies.get(0);
+                // basic player logic (can upgrade later)
+                target = getFirstAliveEnemy();
+                action = current.getAvailableActions().get(0);
             }
 
-            executeTurn(current, action, target);
+            // safety check
+            if (target != null) {
+                executeTurn(current, action, target);
+            }
         }
     }
 
@@ -149,5 +161,21 @@ public class BattleManagement {
             }
         }
         return count;
+    }
+
+    // helper: first alive player
+    private Character getFirstAlivePlayer() {
+        for (Player p : players) {
+            if (p.isAlive()) return p;
+        }
+        return null;
+    }
+
+    // helper: first alive enemy
+    private Character getFirstAliveEnemy() {
+        for (Enemy e : enemies) {
+            if (e.isAlive()) return e;
+        }
+        return null;
     }
 }
