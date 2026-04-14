@@ -3,6 +3,7 @@ package combatarena;
 import combatarena.actions.items.Potion;
 import combatarena.actions.items.PowerStone;
 import combatarena.actions.items.SmokeBomb;
+import combatarena.actions.Action;
 import combatarena.effects.ArcaneBuff;
 import combatarena.engine.ActionContext;
 import combatarena.engine.BasicAttackStrategy;
