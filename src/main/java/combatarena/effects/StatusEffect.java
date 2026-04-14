@@ -2,11 +2,11 @@ package combatarena.effects;
 
 import combatarena.entities.Character;
 
-public abstract class Effects {
+public abstract class StatusEffect {
 
     protected int duration;
 
-    public Effects(int duration) {
+    public StatusEffect(int duration) {
         this.duration = duration;
     }
 
