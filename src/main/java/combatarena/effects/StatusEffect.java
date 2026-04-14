@@ -5,22 +5,21 @@ import combatarena.entities.Character;
 public abstract class StatusEffect {
 
     protected int duration;
+    protected String typeOfEffect;
 
-    public StatusEffect(int duration) {
-        this.duration = duration;
-    }
+    public abstract void apply(Character target);
+    public abstract void tick(Character target);
+    public abstract void remove(Character target);
 
-    // applies the effect and reduces duration each turn
-    public void tick(Character character) {
-        applyEffect(character);
-        duration--;
-    }
-
-    // each effect defines its own behaviour
-    protected abstract void applyEffect(Character character);
-
-    // checks if the effect has expired
     public boolean isExpired() {
         return duration <= 0;
+    }
+
+    public int getAttackBonus() { return 0; }
+    public int getDefenseBonus() { return 0; }
+    public boolean isStun() { return false; }
+
+    public String getTypeOfEffect() {
+        return typeOfEffect;
     }
 }
