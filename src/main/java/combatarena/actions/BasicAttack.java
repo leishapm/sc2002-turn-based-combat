@@ -1,5 +1,4 @@
 package combatarena.actions;
-
 import combatarena.engine.ActionContext;
 import combatarena.entities.Character;
 import combatarena.util.ActionResult;
@@ -16,6 +15,7 @@ public class BasicAttack extends Action {
         damage = Math.max(1, damage);
         ActionResult result = new ActionResult();
         result.setDamageGiven(damage);
+        result.setTarget(target);
         return result;
     }
     @Override
