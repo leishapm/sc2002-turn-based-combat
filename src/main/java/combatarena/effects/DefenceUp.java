@@ -4,19 +4,16 @@ import combatarena.entities.Character;
 
 public class DefenceUp extends StatusEffect {
 
-    private int bonus = 10;
-    private boolean applied = false;
+    private int bonus;
 
-    public DefenceUp() {
-        super("DefenceUp", 2);
+    public DefenceUp(int duration, int bonus) {
+        super("DefenceUp", duration);
+        this.bonus = bonus;
     }
 
     @Override
     public void apply(Character target) {
-        if (!applied) {
-            target.increaseDefense(bonus);
-            applied = true;
-        }
+        target.increaseDefense(bonus);
     }
 
     @Override
@@ -29,7 +26,7 @@ public class DefenceUp extends StatusEffect {
         target.decreaseDefense(bonus);
     }
 
-    public int getDefenseBonus() {
+    public int getBonus() {
         return bonus;
     }
 }
