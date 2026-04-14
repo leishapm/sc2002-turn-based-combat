@@ -10,16 +10,16 @@ public abstract class Character {
 
     protected int hp;
     protected int attack;
-    protected int defense;
+    protected int defence;
     protected int speed;
     protected int maxHp;
     protected List<StatusEffect> activeEffects;
 
-    public Character(int hp, int attack, int defense, int speed) {
+    public Character(int hp, int attack, int defence, int speed) {
         this.hp = hp;
         this.maxHp = hp;
         this.attack = attack;
-        this.defense = defense;
+        this.defence = defence;
         this.speed = speed;
         this.activeEffects = new ArrayList<>();
     }
@@ -32,9 +32,10 @@ public abstract class Character {
             StatusEffect effect = iterator.next();
 
             effect.apply(this);
-            effect.decrementDuration();
+            effect.tick(this);
 
             if (effect.isExpired()) {
+                effect.remove(this);
                 iterator.remove();
             }
         }
@@ -54,7 +55,7 @@ public abstract class Character {
 
     public void takeDamage(int dmg) {
 
-        int reducedDamage = Math.max(0, dmg - defense);
+        int reducedDamage = Math.max(0, dmg - defence);
         hp -= reducedDamage;
 
         if (hp < 0) {
@@ -71,6 +72,14 @@ public abstract class Character {
         }
     }
 
+    public void increaseDefence(int amount) {
+        defence += amount;
+    }
+
+    public void decreaseDefence(int amount) {
+        defence -= amount;
+    }
+
     public int getSpeed() {
         return speed;
     }
@@ -79,8 +88,8 @@ public abstract class Character {
         return attack;
     }
 
-    public int getDefense() {
-        return defense;
+    public int getDefence() {
+        return defence;
     }
 
     public int getHp() {
