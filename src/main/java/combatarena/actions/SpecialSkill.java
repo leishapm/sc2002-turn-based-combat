@@ -1,4 +1,4 @@
-package combatarena.skills;
+package combatarena.actions;
 
 import combatarena.engine.ActionContext;
 import combatarena.util.ActionResult;

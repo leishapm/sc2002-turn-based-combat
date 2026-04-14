@@ -4,7 +4,7 @@ import combatarena.actions.Action;
 import combatarena.actions.BasicAttack;
 import combatarena.actions.UseItemAction;
 import combatarena.actions.items.Item;
-import combatarena.skills.SpecialSkill;
+import combatarena.actions.SpecialSkill;
 
 import java.util.ArrayList;
 import java.util.List;

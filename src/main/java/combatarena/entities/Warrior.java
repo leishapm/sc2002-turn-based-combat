@@ -1,6 +1,6 @@
 package combatarena.entities;
 
-import combatarena.skills.SpecialSkill;
+import combatarena.actions.SpecialSkill;
 
 public class Warrior extends Player {
 

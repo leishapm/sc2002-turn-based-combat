@@ -4,6 +4,7 @@ import combatarena.actions.items.Potion;
 import combatarena.actions.items.PowerStone;
 import combatarena.actions.items.SmokeBomb;
 import combatarena.actions.Action;
+import combatarena.actions.SpecialSkill;
 import combatarena.effects.ArcaneBuff;
 import combatarena.engine.ActionContext;
 import combatarena.engine.BasicAttackStrategy;
@@ -21,7 +22,6 @@ import combatarena.level.Level;
 import combatarena.level.Level1;
 import combatarena.level.Level2;
 import combatarena.level.Level3;
-import combatarena.skills.SpecialSkill;
 import combatarena.util.ActionResult;
 
 import java.util.ArrayList;
