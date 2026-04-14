@@ -1,10 +1,13 @@
 package combatarena.engine;
 
-import combatarena.entities.*;
 import combatarena.actions.Action;
-import combatarena.util.ActionResult;
+import combatarena.actions.UseItemAction;
+import combatarena.entities.Character;
+import combatarena.entities.Enemy;
+import combatarena.entities.Player;
 import combatarena.effects.StatusEffect;
 import combatarena.level.Level;
+import combatarena.util.ActionResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,38 +37,60 @@ public class BattleManagement {
         turnOrderList = determineTurnOrder();
 
         while (!isBattleOver()) {
-
             checkAndSpawnBackup();
 
             Character current = nextTurn();
-            if (current == null || !current.isAlive()) continue;
+            if (current == null || !current.isAlive()) {
+                continue;
+            }
 
+            boolean stunnedAtStart = current.isStunned();
             current.updateEffects();
 
-            if (current.isStunned()) continue;
+            if (stunnedAtStart) {
+                continue;
+            }
 
             Character target = (current instanceof Enemy) ? player : getFirstAliveEnemy();
-            if (target == null) continue;
+            if (target == null) {
+                continue;
+            }
 
             List<Character> targets = new ArrayList<>();
             targets.add(target);
 
             ActionContext context = new ActionContext(current, targets, null);
-
             executeTurn(context);
         }
     }
 
     public List<Character> determineTurnOrder() {
         List<Character> all = new ArrayList<>();
-        all.add(player);
-        all.addAll(enemies);
+
+        if (player != null && player.isAlive()) {
+            all.add(player);
+        }
+
+        if (enemies != null) {
+            for (Enemy enemy : enemies) {
+                if (enemy != null && enemy.isAlive()) {
+                    all.add(enemy);
+                }
+            }
+        }
+
+        if (turnOrderStrategy == null) {
+            return all;
+        }
+
         return turnOrderStrategy.determineTurnOrder(all);
     }
 
     public void executeTurn(ActionContext context) {
-
-        if (context == null || context.getTargets().isEmpty()) return;
+        if (context == null || context.getUser() == null ||
+            context.getTargets() == null || context.getTargets().isEmpty()) {
+            return;
+        }
 
         Character user = context.getUser();
         Character target = context.getTargets().get(0);
@@ -73,76 +98,126 @@ public class BattleManagement {
         Action action;
 
         if (user instanceof Enemy enemy) {
-            action = enemy.getActionStrategy()
-                          .chooseAction(enemy, target);
+            if (enemy.getActionStrategy() == null) {
+                return;
+            }
+            action = enemy.getActionStrategy().chooseAction(enemy, target);
+        } else if (user instanceof Player playerEntity) {
+            if (context.getSelectedItem() != null) {
+                action = new UseItemAction();
+            } else if (playerEntity.getAvailableActions() != null && !playerEntity.getAvailableActions().isEmpty()) {
+                action = playerEntity.getAvailableActions().get(0);
+            } else {
+                return;
+            }
         } else {
-            action = user.getAvailableActions().get(0);
+            return;
         }
 
-        if (action == null) return;
+        if (action == null) {
+            return;
+        }
 
         ActionResult result = action.execute(context);
-
         applyResult(target, result);
     }
 
     public void applyResult(Character target, ActionResult result) {
+        if (target == null || result == null) {
+            return;
+        }
 
-        if (target == null || result == null) return;
-
-        // Damage
         target.takeDamage(result.getDamageGiven());
 
-        // Heal
         if (result.getHealAmount() > 0) {
             target.heal(result.getHealAmount());
         }
 
-        // Effects
         for (StatusEffect effect : result.getEffectsApplied()) {
-            effect.apply(target); // APPLY ONCE
             target.addEffect(effect);
         }
 
-        // Defeat tracking
         if (!target.isAlive()) {
             result.addDefeatedTarget(target);
         }
     }
 
     public Character nextTurn() {
-        if (turnOrderList.isEmpty()) return null;
+        if (turnOrderList == null || turnOrderList.isEmpty()) {
+            return null;
+        }
 
         if (currentTurnIndex >= turnOrderList.size()) {
             currentTurnIndex = 0;
             roundNumber++;
+            turnOrderList = determineTurnOrder();
         }
 
         return turnOrderList.get(currentTurnIndex++);
     }
 
     public boolean isWaveCleared() {
-        return enemies.stream().noneMatch(Enemy::isAlive);
+        if (enemies == null) {
+            return true;
+        }
+
+        for (Enemy e : enemies) {
+            if (e != null && e.isAlive()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void checkAndSpawnBackup() {
+        if (selectedLevel == null || enemies == null) {
+            return;
+        }
+
+        List<Enemy> backupWave = selectedLevel.getBackupWave();
 
         if (isWaveCleared() &&
-            !selectedLevel.getBackupWave().isEmpty() &&
+            backupWave != null &&
+            !backupWave.isEmpty() &&
             !selectedLevel.isBackupSpawnTriggered()) {
 
-            enemies.addAll(selectedLevel.getBackupWave());
+            enemies.addAll(backupWave);
             selectedLevel.setBackupSpawnTriggered(true);
             turnOrderList = determineTurnOrder();
         }
     }
 
     public boolean isBattleOver() {
-        return !player.isAlive() ||
-               (isWaveCleared() && selectedLevel.getBackupWave().isEmpty());
+        if (player == null || !player.isAlive()) {
+            return true;
+        }
+
+        if (!isWaveCleared()) {
+            return false;
+        }
+
+        if (selectedLevel == null) {
+            return true;
+        }
+
+        List<Enemy> backupWave = selectedLevel.getBackupWave();
+        boolean hasBackup = backupWave != null && !backupWave.isEmpty();
+
+        return !hasBackup || selectedLevel.isBackupSpawnTriggered();
     }
 
     private Character getFirstAliveEnemy() {
-        return enemies.stream().filter(Enemy::isAlive).findFirst().orElse(null);
+        if (enemies == null) {
+            return null;
+        }
+
+        for (Enemy e : enemies) {
+            if (e != null && e.isAlive()) {
+                return e;
+            }
+        }
+
+        return null;
     }
 }
