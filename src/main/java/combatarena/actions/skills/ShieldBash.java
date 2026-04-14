@@ -1,5 +1,6 @@
 package combatarena.actions.skills;
 
+import combatarena.actions.Action;
 import combatarena.engine.ActionContext;
 import combatarena.effects.Stun;
 import combatarena.util.ActionResult;
