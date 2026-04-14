@@ -8,7 +8,6 @@ public class BasicAttack extends Action {
 
     @Override
     public ActionResult execute(ActionContext context) {
-
         if (context == null || context.getUser() == null ||
             context.getTargets() == null || context.getTargets().isEmpty()) {
             throw new IllegalArgumentException("Invalid ActionContext");
@@ -17,7 +16,7 @@ public class BasicAttack extends Action {
         Character attacker = context.getUser();
         Character target = context.getTargets().get(0);
 
-        int damage = attacker.getAttack(); // FIXED
+        int damage = attacker.getAttack();
 
         ActionResult result = new ActionResult();
         result.setDamageGiven(damage);
