@@ -1,0 +1,51 @@
+package combatarena.entities;
+
+import combatarena.actions.Action;
+import combatarena.actions.BasicAttack;
+import combatarena.actions.UseItemAction;
+import combatarena.actions.items.Item;
+import combatarena.skills.SpecialSkill;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Player extends Character {
+
+    private List<Item> inventory;
+    private SpecialSkill specialSkill;
+    private int specialSkillCd;
+
+    public Player(int hp, int attack, int defense, int speed, SpecialSkill skill) {
+        super(hp, attack, defense, speed);
+        this.inventory = new ArrayList<>();
+        this.specialSkill = skill;
+        this.specialSkillCd = 0;
+    }
+
+    public List<Action> getAvailableActions() {
+        List<Action> actions = new ArrayList<>();
+
+        actions.add(new BasicAttack());
+        actions.add(new UseItemAction());
+
+        return actions;
+    }
+
+    public void decrementCooldown() {
+        if (specialSkillCd > 0) {
+            specialSkillCd--;
+        }
+    }
+
+    public boolean isSkillAvailable() {
+        return specialSkillCd == 0;
+    }
+
+    public List<Item> getInventory() {
+        return inventory;
+    }
+
+    public SpecialSkill getSpecialSkill() {
+        return specialSkill;
+    }
+}
