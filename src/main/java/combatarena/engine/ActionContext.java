@@ -1,4 +1,4 @@
-package combatarena.actions;
+package combatarena.engine;
 
 import combatarena.entities.Character;
 import combatarena.items.Item;
