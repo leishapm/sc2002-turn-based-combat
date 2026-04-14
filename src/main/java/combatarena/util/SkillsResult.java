@@ -5,25 +5,25 @@ import combatarena.effects.Effects;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SkillsResult {
+public class ActionResult {
 
     private int damageGiven;
     private int buffReceived;
     private List<Effects> effectsDone;
 
-    public SkillsResult() {
+    public ActionResult() {
         this.damageGiven = 0;
         this.buffReceived = 0;
         this.effectsDone = new ArrayList<>();
     }
 
-    public SkillsResult(int damageGiven) {
+    public ActionResult(int damageGiven) {
         this.damageGiven = damageGiven;
         this.buffReceived = 0;
         this.effectsDone = new ArrayList<>();
     }
 
-    public SkillsResult(int damageGiven, int buffReceived) {
+    public ActionResult(int damageGiven, int buffReceived) {
         this.damageGiven = damageGiven;
         this.buffReceived = buffReceived;
         this.effectsDone = new ArrayList<>();
