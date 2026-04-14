@@ -2,7 +2,7 @@ package combatarena.effects;
 
 import combatarena.entities.Character;
 
-public class DefenseUp extends Effects {
+public class DefenseUp extends StatusEffect {
 
     private int bonus;
 
