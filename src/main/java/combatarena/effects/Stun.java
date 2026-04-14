@@ -9,8 +9,17 @@ public class Stun extends StatusEffect {
     }
 
     @Override
-    protected void applyEffect(Character character) {
-        // set stunned to true so character skips turn
-        character.setStunned(true);
+    public void apply(Character target) {
+
+    }
+
+    @Override
+    public void tick(Character target) {
+        decrementDuration();
+    }
+
+    @Override
+    public void remove(Character target) {
+
     }
 }
