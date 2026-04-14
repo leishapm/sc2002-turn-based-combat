@@ -4,17 +4,26 @@ import combatarena.entities.Character;
 
 public class DefenseUp extends StatusEffect {
 
-    private int bonus;
+    private int bonus = 10;
 
-    public DefenseUp(int duration, int bonus) {
-        super(duration);
-        this.bonus = bonus;
+    public DefenseUp() {
+        this.duration = 2;
+        this.typeOfEffect = "DefenseUp";
     }
 
     @Override
-    protected void applyEffect(Character character) {
-        // temporarily increase defense
-        // NOTE: this stacks every turn unless handled carefully
-        character.addDefense(bonus);
+    public void apply(Character target) {}
+
+    @Override
+    public void tick(Character target) {
+        duration--;
+    }
+
+    @Override
+    public void remove(Character target) {}
+
+    @Override
+    public int getDefenseBonus() {
+        return bonus;
     }
 }
