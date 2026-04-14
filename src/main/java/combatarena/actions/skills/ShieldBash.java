@@ -1,4 +1,4 @@
-package combatarena.actions;
+package combatarena.actions.skills;
 
 import combatarena.engine.ActionContext;
 import combatarena.effects.Stun;
