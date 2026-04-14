@@ -1,10 +1,7 @@
 package combatarena.engine;
 
-import combatarena.entities.Character;
-import combatarena.entities.Player;
-import combatarena.entities.Enemy;
+import combatarena.entities.*;
 import combatarena.actions.Action;
-import combatarena.actions.ActionContext;
 import combatarena.util.ActionResult;
 import combatarena.effects.StatusEffect;
 import combatarena.level.Level;
@@ -41,6 +38,7 @@ public class BattleManagement {
             checkAndSpawnBackup();
 
             Character current = nextTurn();
+            if (current == null || !current.isAlive()) continue;
 
             current.updateEffects();
 
@@ -69,9 +67,19 @@ public class BattleManagement {
 
         if (context == null || context.getTargets().isEmpty()) return;
 
+        Character user = context.getUser();
         Character target = context.getTargets().get(0);
 
-        Action action = context.getUser().getAvailableActions().get(0);
+        Action action;
+
+        if (user instanceof Enemy enemy) {
+            action = enemy.getActionStrategy()
+                          .chooseAction(enemy, target);
+        } else {
+            action = user.getAvailableActions().get(0);
+        }
+
+        if (action == null) return;
 
         ActionResult result = action.execute(context);
 
@@ -82,38 +90,49 @@ public class BattleManagement {
 
         if (target == null || result == null) return;
 
+        // Damage
         target.takeDamage(result.getDamageGiven());
 
+        // Heal
         if (result.getHealAmount() > 0) {
             target.heal(result.getHealAmount());
         }
 
+        // Effects
         for (StatusEffect effect : result.getEffectsApplied()) {
+            effect.apply(target); // APPLY ONCE
             target.addEffect(effect);
+        }
+
+        // Defeat tracking
+        if (!target.isAlive()) {
+            result.addDefeatedTarget(target);
         }
     }
 
     public Character nextTurn() {
+        if (turnOrderList.isEmpty()) return null;
+
         if (currentTurnIndex >= turnOrderList.size()) {
             currentTurnIndex = 0;
             roundNumber++;
         }
 
-        Character next = turnOrderList.get(currentTurnIndex);
-        currentTurnIndex++;
-        return next;
+        return turnOrderList.get(currentTurnIndex++);
     }
 
     public boolean isWaveCleared() {
-        for (Enemy e : enemies) {
-            if (e.isAlive()) return false;
-        }
-        return true;
+        return enemies.stream().noneMatch(Enemy::isAlive);
     }
 
     public void checkAndSpawnBackup() {
-        if (isWaveCleared() && !selectedLevel.getBackupWave().isEmpty()) {
+
+        if (isWaveCleared() &&
+            !selectedLevel.getBackupWave().isEmpty() &&
+            !selectedLevel.isBackupSpawnTriggered()) {
+
             enemies.addAll(selectedLevel.getBackupWave());
+            selectedLevel.setBackupSpawnTriggered(true);
             turnOrderList = determineTurnOrder();
         }
     }
@@ -124,9 +143,6 @@ public class BattleManagement {
     }
 
     private Character getFirstAliveEnemy() {
-        for (Enemy e : enemies) {
-            if (e.isAlive()) return e;
-        }
-        return null;
+        return enemies.stream().filter(Enemy::isAlive).findFirst().orElse(null);
     }
 }
