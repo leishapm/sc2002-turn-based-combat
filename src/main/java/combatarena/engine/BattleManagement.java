@@ -1,4 +1,5 @@
 package combatarena.engine;
+
 import combatarena.entities.Character;
 import combatarena.entities.Player;
 import combatarena.entities.Enemy;
@@ -7,10 +8,12 @@ import combatarena.actions.ActionContext;
 import combatarena.util.ActionResult;
 import combatarena.effects.StatusEffect;
 import combatarena.level.Level;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class BattleManagement {
+
     private Player player;
     private List<Enemy> enemies;
     private List<Character> turnOrderList;
@@ -32,16 +35,25 @@ public class BattleManagement {
 
     public void startBattle() {
         turnOrderList = determineTurnOrder();
+
         while (!isBattleOver()) {
+
             checkAndSpawnBackup();
+
             Character current = nextTurn();
+
             current.updateEffects();
+
             if (current.isStunned()) continue;
+
             Character target = (current instanceof Enemy) ? player : getFirstAliveEnemy();
             if (target == null) continue;
+
             List<Character> targets = new ArrayList<>();
             targets.add(target);
+
             ActionContext context = new ActionContext(current, targets, null);
+
             executeTurn(context);
         }
     }
@@ -54,19 +66,28 @@ public class BattleManagement {
     }
 
     public void executeTurn(ActionContext context) {
+
         if (context == null || context.getTargets().isEmpty()) return;
+
+        Character target = context.getTargets().get(0);
+
         Action action = context.getUser().getAvailableActions().get(0);
+
         ActionResult result = action.execute(context);
-        applyResult(result);
+
+        applyResult(target, result);
     }
 
-    public void applyResult(ActionResult result) {
-        if (result == null || result.getTarget() == null) return;
-        Character target = result.getTarget();
+    public void applyResult(Character target, ActionResult result) {
+
+        if (target == null || result == null) return;
+
         target.takeDamage(result.getDamageGiven());
+
         if (result.getHealAmount() > 0) {
             target.heal(result.getHealAmount());
         }
+
         for (StatusEffect effect : result.getEffectsApplied()) {
             target.addEffect(effect);
         }
@@ -77,6 +98,7 @@ public class BattleManagement {
             currentTurnIndex = 0;
             roundNumber++;
         }
+
         Character next = turnOrderList.get(currentTurnIndex);
         currentTurnIndex++;
         return next;
@@ -97,7 +119,8 @@ public class BattleManagement {
     }
 
     public boolean isBattleOver() {
-        return !player.isAlive() || (isWaveCleared() && selectedLevel.getBackupWave().isEmpty());
+        return !player.isAlive() ||
+               (isWaveCleared() && selectedLevel.getBackupWave().isEmpty());
     }
 
     private Character getFirstAliveEnemy() {
