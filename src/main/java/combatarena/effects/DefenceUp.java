@@ -2,13 +2,13 @@ package combatarena.effects;
 
 import combatarena.entities.Character;
 
-public class DefenseUp extends StatusEffect {
+public class DefenceUp extends StatusEffect {
 
     private int bonus = 10;
 
     public DefenseUp() {
         this.duration = 2;
-        this.typeOfEffect = "DefenseUp";
+        this.typeOfEffect = "DefenceUp";
     }
 
     @Override
@@ -23,7 +23,7 @@ public class DefenseUp extends StatusEffect {
     public void remove(Character target) {}
 
     @Override
-    public int getDefenseBonus() {
+    public int getDefenceBonus() {
         return bonus;
     }
 }
