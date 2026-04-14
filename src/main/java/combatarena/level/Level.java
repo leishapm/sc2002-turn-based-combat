@@ -23,4 +23,20 @@ public abstract class Level {
     public String getDifficulty() {
         return difficulty;
     }
+
+    public boolean isBackupSpawnTriggered() {
+        return backupSpawnTriggered;
+    }
+
+    public void setBackupSpawnTriggered(boolean backupSpawnTriggered) {
+        this.backupSpawnTriggered = backupSpawnTriggered;
+    }
+
+    public List<Enemy> getStartingEnemyPool() {
+        return startingEnemyPool;
+    }
+
+    public List<Enemy> getBackupSpawn() {
+        return backupSpawn;
+    }
 }
