@@ -1,7 +1,7 @@
 package combatarena.entities;
 
-import combatarena.effects.Effects;
-import combatarena.actions.Actions;
+import combatarena.effects.StatusEffect;
+import combatarena.actions.Action;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -50,7 +50,7 @@ public abstract class Character {
         Iterator<Effects> iterator = activeEffects.iterator();
 
         while (iterator.hasNext()) {
-            Effects effect = iterator.next();
+            StatusEffect effect = iterator.next();
 
             effect.tick(this);
 
@@ -61,12 +61,12 @@ public abstract class Character {
     }
 
     // adds a new effect to this character
-    public void addEffect(Effects effect) {
+    public void addEffect(StatusEffect effect) {
         activeEffects.add(effect);
     }
 
     // removes a specific effect if needed
-    public void removeEffect(Effects effect) {
+    public void removeEffect(StatusEffect effect) {
         activeEffects.remove(effect);
     }
 
