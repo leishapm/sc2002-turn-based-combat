@@ -6,7 +6,7 @@ public class DefenceUp extends StatusEffect {
 
     private int bonus = 10;
 
-    public DefenseUp() {
+    public DefenceUp() {
         this.duration = 2;
         this.typeOfEffect = "DefenceUp";
     }
