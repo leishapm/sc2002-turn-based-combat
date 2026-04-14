@@ -5,12 +5,12 @@ import combatarena.entities.Character;
 public class Stun extends StatusEffect {
 
     public Stun(int duration) {
-        super(duration);
+        super("Stun", duration);
     }
 
     @Override
     public void apply(Character target) {
-
+        target.setStunned(true);
     }
 
     @Override
@@ -20,6 +20,6 @@ public class Stun extends StatusEffect {
 
     @Override
     public void remove(Character target) {
-
+        target.setStunned(false);
     }
 }
