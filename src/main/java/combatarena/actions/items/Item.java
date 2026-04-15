@@ -8,6 +8,7 @@ public abstract class Item {
     protected int quantity = 1;
 
     public abstract ActionResult use(ActionContext context);
+    public abstract Item copy();
 
     public boolean requiresTarget() {
         return false;
