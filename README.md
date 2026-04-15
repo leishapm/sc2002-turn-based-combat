@@ -193,26 +193,39 @@ The system is structured into layers:
 
 ## How to Run
 
+### Prerequisites
+Before running this project, ensure you have the following installed:
+
+**a. macOS / Linux**
+```
+- [GitHub CLI](https://cli.github.com/) (`gh`)
+- [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/downloads/)
+```
+**b. Windows**
+```
+- [Git](https://git-scm.com/downloads)
+- [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/downloads/)
+```
+
 ### 1. Clone the Repository
- a. macOS / Linux
+ **a. macOS / Linux**
 ```bash
 gh repo clone leishapm/sc2002-turn-based-combat
 cd sc2002-turn-based-combat
 ```
- b. Windows - Command Prompt
+ **b. Windows - Command Prompt**
 ```bash
 git clone https://github.com/leishapm/sc2002-turn-based-combat
 cd sc2002-turn-based-combat
 ```
 
 ### 2. Compile and Run
-   a. macOS / Linux
+ **a. macOS / Linux**
 ```bash
 javac -d out $(find src/main/java -name "*.java")  
 java -cp out combatarena.Main
 ```
-
-  b. Windows - Command Prompt
+ **b. Windows - Command Prompt**
 ```bash
 dir /s /b src\main\java\*.java > sources.txt
 javac -d out @sources.txt
