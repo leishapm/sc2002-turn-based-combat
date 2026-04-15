@@ -200,7 +200,7 @@ gh repo clone leishapm/sc2002-turn-based-combat
 cd sc2002-turn-based-combat
 ```
 
-2. Compile and Run
+### 2. Compile and Run
    a. macOS / Linux
 ```bash
 javac -d out $(find src/main/java -name "*.java")  
