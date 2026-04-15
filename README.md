@@ -201,18 +201,18 @@ cd sc2002-turn-based-combat
 ```
 
 2. Compile and Run
-   macOS / Linux
+   a. macOS / Linux
 ```bash
 javac -d out $(find src/main/java -name "*.java")  
 java -cp out combatarena.Main
 ```
 
-  Windows - Command Prompt
+  b. Windows - Command Prompt
 ```bash
 for /R src\main\java %%f in (*.java) do javac -d out "%%f"
 java -cp out combatarena.Main
 ```
-  Windows - PowerShell
+  c. Windows - PowerShell
 ```bash
 javac -d out (Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName })  
 java -cp out combatarena.Main  
