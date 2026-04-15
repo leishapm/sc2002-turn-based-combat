@@ -46,6 +46,10 @@ public class Main {
 
             Player player = choosePlayer(scanner);
             List<Item> selectedItems = chooseItems(scanner);
+            List<Item> originalItems = new ArrayList<>();
+            for (Item item : selectedItems) {
+                originalItems.add(item.copy());
+            }
             player.setInventory(selectedItems);
 
             Level level = chooseLevel(scanner);
@@ -117,6 +121,12 @@ public class Main {
 
                 if (choice.equals("1")) {
                     player.reset();
+
+                    List<Item> resetItems = new ArrayList<>();
+                    for (Item item : originalItems) {
+                        resetItems.add(item.copy());
+                    }
+                    player.setInventory(resetItems);
                 } else if (choice.equals("2")) {
                     replaySame = false;
                 } else {
