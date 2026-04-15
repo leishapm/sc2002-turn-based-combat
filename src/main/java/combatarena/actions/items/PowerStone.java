@@ -24,4 +24,10 @@ public class PowerStone extends Item {
         consume();
         return result;
     }
+    @Override
+    public Item copy() {
+        PowerStone p = new PowerStone();
+        p.setQuantity(this.getQuantity());
+        return p;
+    }
 }
