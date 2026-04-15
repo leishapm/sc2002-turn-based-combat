@@ -193,26 +193,27 @@ The system is structured into layers:
 
 ## How to Run
 
-1. Clone the repository
+### 1. Clone the Repository
 
-gh repo clone leishapm/sc2002-turn-based-combat  
-cd sc2002-turn-based-combat  
+```bash
+gh repo clone leishapm/sc2002-turn-based-combat
+cd sc2002-turn-based-combat
+```
 
 2. Compile and Run (macOS / Linux)
-
+```bash
 javac -d out $(find src/main/java -name "*.java")  
-java -cp out combatarena.Main  
+java -cp out combatarena.Main
+```
 
 3. Compile and Run (Windows - Command Prompt)
-
+```bash
 javac -d out src\main\java\combatarena\**\*.java  
 java -cp out combatarena.Main  
-
+```
 4. Compile and Run (Windows - PowerShell)
-
+```bash
 javac -d out (Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName })  
 java -cp out combatarena.Main  
+```
 
-Requirements
-
-Java 17 or higher
