@@ -194,9 +194,14 @@ The system is structured into layers:
 ## How to Run
 
 ### 1. Clone the Repository
-
+ a. macOS / Linux
 ```bash
 gh repo clone leishapm/sc2002-turn-based-combat
+cd sc2002-turn-based-combat
+```
+ b. Windows - Command Prompt
+```bash
+git clone https://github.com/leishapm/sc2002-turn-based-combat
 cd sc2002-turn-based-combat
 ```
 
@@ -213,9 +218,5 @@ dir /s /b src\main\java\*.java > sources.txt
 javac -d out @sources.txt
 java -cp out combatarena.Main
 ```
-  c. Windows - PowerShell
-```bash
-javac -d out (Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName })  
-java -cp out combatarena.Main  
-```
+
 
