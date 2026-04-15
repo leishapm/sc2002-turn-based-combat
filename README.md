@@ -200,18 +200,19 @@ gh repo clone leishapm/sc2002-turn-based-combat
 cd sc2002-turn-based-combat
 ```
 
-2. Compile and Run (macOS / Linux)
+2. Compile and Run
+   macOS / Linux
 ```bash
 javac -d out $(find src/main/java -name "*.java")  
 java -cp out combatarena.Main
 ```
 
-3. Compile and Run (Windows - Command Prompt)
+  Windows - Command Prompt
 ```bash
-for /R src\main\java %f in (*.java) do javac -d out "%f"
+for /R src\main\java %%f in (*.java) do javac -d out "%%f"
 java -cp out combatarena.Main
 ```
-4. Compile and Run (Windows - PowerShell)
+  Windows - PowerShell
 ```bash
 javac -d out (Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName })  
 java -cp out combatarena.Main  
