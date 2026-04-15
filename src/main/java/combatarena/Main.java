@@ -37,53 +37,93 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("SC2002 Turn-Based Combat");
-        System.out.println("-------------------------");
+        boolean running = true;
 
-        Player player = choosePlayer(scanner);
-        List<Item> selectedItems = chooseItems(scanner);
-        player.setInventory(selectedItems);
+        while (running) {
 
-        Level level = chooseLevel(scanner);
+            System.out.println("SC2002 Turn-Based Combat");
+            System.out.println("-------------------------");
 
-        List<Enemy> initialEnemies = new ArrayList<>(level.getInitialWave());
-        List<Enemy> backupEnemies = new ArrayList<>(level.getBackupWave());
+            Player player = choosePlayer(scanner);
+            List<Item> selectedItems = chooseItems(scanner);
+            player.setInventory(selectedItems);
 
-        assignEnemyNames(initialEnemies);
-        assignEnemyNames(backupEnemies);
+            Level level = chooseLevel(scanner);
 
-        printSetup(player, selectedItems, level, initialEnemies, backupEnemies);
+            boolean replaySame = true;
 
-        TurnOrderStrategy turnOrderStrategy = new SpeedOrderStrategy();
+            while (replaySame) {
 
-        BattleManagement battle = new BattleManagement(
-                player,
-                initialEnemies,
-                turnOrderStrategy,
-                level,
-                scanner
-        );
+                EnemyActionStrategy strategy = new BasicAttackStrategy();
 
-        battle.startBattle();
+                List<Enemy> initialEnemies;
+                List<Enemy> backupEnemies;
 
-        if (player.isAlive()) {
-            System.out.println();
-            System.out.println("Victory");
-            System.out.printf(
-                    "Result: Player Victory Remaining HP: %d / %d | Total Rounds: %d | %s%n",
-                    player.getHp(),
-                    player.getMaxHp(),
-                    battle.getRoundNumber(),
-                    formatRemainingItems(player)
-            );
-        } else {
-            System.out.println();
-            System.out.println("Defeat");
-            System.out.printf(
-                    "Result: Player Defeat Enemies remaining: %d | Total Rounds Survived: %d%n",
-                    battle.getAliveEnemyCount(),
-                    battle.getRoundNumber()
-            );
+                if (level instanceof Level1) {
+                    initialEnemies = createLevel1Enemies(strategy);
+                    backupEnemies = createLevel1Backup(strategy);
+                } else if (level instanceof Level2) {
+                    initialEnemies = createLevel2Enemies(strategy);
+                    backupEnemies = createLevel2Backup(strategy);
+                } else {
+                    initialEnemies = createLevel3Enemies(strategy);
+                    backupEnemies = createLevel3Backup(strategy);
+                }
+
+                assignEnemyNames(initialEnemies);
+                assignEnemyNames(backupEnemies);
+
+                printSetup(player, selectedItems, level, initialEnemies, backupEnemies);
+
+                TurnOrderStrategy turnOrderStrategy = new SpeedOrderStrategy();
+
+                BattleManagement battle = new BattleManagement(
+                        player,
+                        initialEnemies,
+                        turnOrderStrategy,
+                        level,
+                        scanner
+                );
+
+                battle.startBattle();
+
+                if (player.isAlive()) {
+                    System.out.println();
+                    System.out.println("Victory");
+                    System.out.printf(
+                            "Result: Player Victory Remaining HP: %d / %d | Total Rounds: %d | %s%n",
+                            player.getHp(),
+                            player.getMaxHp(),
+                            battle.getRoundNumber(),
+                            formatRemainingItems(player)
+                    );
+                } else {
+                    System.out.println();
+                    System.out.println("Defeat");
+                    System.out.printf(
+                            "Result: Player Defeat Enemies remaining: %d | Total Rounds Survived: %d%n",
+                            battle.getAliveEnemyCount(),
+                            battle.getRoundNumber()
+                    );
+                }
+
+                System.out.println();
+                System.out.println("1. Replay same settings");
+                System.out.println("2. New game");
+                System.out.println("3. Exit");
+                System.out.print("Enter choice: ");
+
+                String choice = scanner.nextLine();
+
+                if (choice.equals("1")) {
+                    player.reset();
+                } else if (choice.equals("2")) {
+                    replaySame = false;
+                } else {
+                    replaySame = false;
+                    running = false;
+                }
+            }
         }
 
         scanner.close();
