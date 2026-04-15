@@ -209,7 +209,8 @@ java -cp out combatarena.Main
 
   b. Windows - Command Prompt
 ```bash
-for /R src\main\java %%f in (*.java) do javac -d out "%%f"
+dir /s /b src\main\java\*.java > sources.txt
+javac -d out @sources.txt
 java -cp out combatarena.Main
 ```
   c. Windows - PowerShell
