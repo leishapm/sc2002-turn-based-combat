@@ -47,6 +47,10 @@ public class Player extends Character {
         }
     }
 
+    public void reset() {
+        this.hp = this.maxHp;
+    }
+
     public List<Item> getInventory() {
         return inventory;
     }
