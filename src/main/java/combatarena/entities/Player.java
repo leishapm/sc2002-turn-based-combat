@@ -24,10 +24,8 @@ public class Player extends Character {
 
     public List<Action> getAvailableActions() {
         List<Action> actions = new ArrayList<>();
-
         actions.add(new BasicAttack());
         actions.add(new UseItemAction());
-
         return actions;
     }
 
@@ -51,6 +49,14 @@ public class Player extends Character {
 
     public List<Item> getInventory() {
         return inventory;
+    }
+
+    public void setInventory(List<Item> items) {
+        if (items == null) {
+            this.inventory = new ArrayList<>();
+        } else {
+            this.inventory = new ArrayList<>(items);
+        }
     }
 
     public SpecialSkill getSpecialSkill() {
