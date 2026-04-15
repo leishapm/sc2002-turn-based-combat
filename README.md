@@ -208,8 +208,8 @@ java -cp out combatarena.Main
 
 3. Compile and Run (Windows - Command Prompt)
 ```bash
-javac -d out src\main\java\combatarena\**\*.java  
-java -cp out combatarena.Main  
+javac -d out src\main\java\combatarena\*.java src\main\java\combatarena\*\*.java src\main\java\combatarena\*\*\*.java
+java -cp out combatarena.Main
 ```
 4. Compile and Run (Windows - PowerShell)
 ```bash
