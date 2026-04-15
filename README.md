@@ -195,10 +195,10 @@ The system is structured into layers:
 
 ### Prerequisites
 Before running this project, ensure you have the following installed:
-```
+
 - [Git](https://git-scm.com/downloads)
 - [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/downloads/)
-```
+
 
 ### 1. Clone the Repository
 
