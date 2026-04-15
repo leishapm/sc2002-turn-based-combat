@@ -74,7 +74,24 @@ public class BattleManagement {
             }
 
             if (current.isStunned()) {
-                System.out.println(getDisplayName(current) + " → STUNNED: Turn skipped");
+
+                boolean willExpire = false;
+
+                if (current.getActiveEffects() != null) {
+                    for (StatusEffect effect : current.getActiveEffects()) {
+                        if (effect instanceof Stun && effect.getDuration() == 1) {
+                            willExpire = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (willExpire) {
+                    System.out.println(getDisplayName(current) + " → STUNNED: Turn skipped | Stun expires");
+                } else {
+                    System.out.println(getDisplayName(current) + " → STUNNED: Turn skipped");
+                }
+
                 continue;
             }
 
@@ -313,7 +330,6 @@ public class BattleManagement {
             line.append(" | ").append(targetName).append(" STUNNED (2 turns)");
         }
 
-        line.append(" | Cooldown set to ").append(cooldown);
 
         if (defeated) {
             line.append(" | ").append(targetName).append(" was defeated.");
@@ -678,7 +694,19 @@ public class BattleManagement {
 
     private void printEliminatedSkip(Character current, boolean stunnedAtStart) {
         String name = getDisplayName(current);
-        if (stunnedAtStart) {
+
+        boolean hadStun = stunnedAtStart;
+
+        if (!hadStun && current.getActiveEffects() != null) {
+            for (StatusEffect effect : current.getActiveEffects()) {
+                if (effect instanceof Stun) {
+                    hadStun = true;
+                    break;
+                }
+            }
+        }
+
+        if (hadStun) {
             System.out.println(name + " → ELIMINATED: Skipped | Stun expires");
         } else {
             System.out.println(name + " → ELIMINATED: Skipped");
