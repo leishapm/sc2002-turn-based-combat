@@ -195,13 +195,6 @@ The system is structured into layers:
 
 ### Prerequisites
 Before running this project, ensure you have the following installed:
-
-**a. macOS / Linux**
-```
-- [GitHub CLI](https://cli.github.com/) (`gh`)
-- [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/downloads/)
-```
-**b. Windows**
 ```
 - [Git](https://git-scm.com/downloads)
 - [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/downloads/)
