@@ -208,7 +208,7 @@ java -cp out combatarena.Main
 
 3. Compile and Run (Windows - Command Prompt)
 ```bash
-javac -d out src\main\java\combatarena\*.java src\main\java\combatarena\*\*.java src\main\java\combatarena\*\*\*.java
+for /R src\main\java %f in (*.java) do javac -d out "%f"
 java -cp out combatarena.Main
 ```
 4. Compile and Run (Windows - PowerShell)
