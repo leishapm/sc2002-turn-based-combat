@@ -9,11 +9,13 @@ public class ShieldBash extends Action {
 
     @Override
     public ActionResult execute(ActionContext context) {
+        if (context == null || context.getUser() == null || context.getTargets() == null || context.getTargets().isEmpty()) {
+            throw new IllegalArgumentException("Invalid ActionContext");
+        }
+
         ActionResult result = new ActionResult();
-        result.setDamageGiven(20);
-
-        result.addEffect(new Stun(1));
-
+        result.setDamageGiven(context.getUser().getAttack());
+        result.addEffect(new Stun(3));
         return result;
     }
 
