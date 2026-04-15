@@ -17,4 +17,10 @@ public class SmokeBomb extends Item {
         consume();
         return result;
     }
+    @Override
+    public Item copy() {
+        SmokeBomb s = new SmokeBomb();
+        s.setQuantity(this.getQuantity());
+        return s;
+    }
 }
