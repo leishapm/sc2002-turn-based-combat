@@ -194,11 +194,11 @@ The system is structured into layers:
 ## How to Run
 
 ### Prerequisites
+
 Before running this project, ensure you have the following installed:
 
-- [Git](https://git-scm.com/downloads)
+- [Git](https://git-scm.com/)
 - [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/downloads/)
-
 
 ### 1. Clone the Repository
 
@@ -207,14 +207,22 @@ git clone https://github.com/leishapm/sc2002-turn-based-combat
 cd sc2002-turn-based-combat
 ```
 
+> **Note:** If you have already cloned the repository before, skip this step and just `cd` into the existing folder.
+
 ### 2. Compile and Run
- **a. macOS / Linux**
+
+#### a. macOS / Linux
+
 ```bash
-javac -d out $(find src/main/java -name "*.java")  
+mkdir -p out
+javac -d out $(find src/main/java -name "*.java")
 java -cp out combatarena.Main
 ```
- **b. Windows - Command Prompt**
-```bash
+
+#### b. Windows - Command Prompt
+
+```cmd
+mkdir out
 dir /s /b src\main\java\*.java > sources.txt
 javac -d out @sources.txt
 java -cp out combatarena.Main
