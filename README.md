@@ -201,12 +201,7 @@ Before running this project, ensure you have the following installed:
 ```
 
 ### 1. Clone the Repository
- **a. macOS / Linux**
-```bash
-gh repo clone leishapm/sc2002-turn-based-combat
-cd sc2002-turn-based-combat
-```
- **b. Windows - Command Prompt**
+
 ```bash
 git clone https://github.com/leishapm/sc2002-turn-based-combat
 cd sc2002-turn-based-combat
