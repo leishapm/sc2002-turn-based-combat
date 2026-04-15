@@ -16,4 +16,10 @@ public class Potion extends Item {
         consume();
         return result;
     }
+    @Override
+    public Item copy() {
+        Potion p = new Potion();
+        p.setQuantity(this.getQuantity());
+        return p;
+    }
 }
