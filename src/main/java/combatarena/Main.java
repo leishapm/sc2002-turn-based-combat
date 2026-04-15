@@ -262,7 +262,13 @@ public class Main {
 
         System.out.print("Items: ");
         System.out.println(items.stream()
-                .map(Main::formatItemName)
+                .map(item -> {
+                    String name = formatItemName(item);
+                    if (item.getQuantity() > 1) {
+                        return name + " x" + item.getQuantity();
+                    }
+                    return name;
+                })
                 .collect(Collectors.joining(" + ")));
 
         String levelLine = "Level: " + level.getDifficulty() + " - " + formatEnemySummary(initialEnemies);
