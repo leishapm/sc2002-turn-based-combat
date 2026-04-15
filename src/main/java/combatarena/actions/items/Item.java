@@ -30,4 +30,11 @@ public abstract class Item {
     public void setQuantity(int quantity) {
         this.quantity = Math.max(0, quantity);
     }
+
+
+    public void addQuantity(int amount) {
+        if (amount > 0) {
+            this.quantity += amount;
+        }
+    }
 }
