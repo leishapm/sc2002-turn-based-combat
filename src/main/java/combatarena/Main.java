@@ -252,7 +252,8 @@ public class Main {
                                    List<Enemy> initialEnemies, List<Enemy> backupEnemies) {
 
         System.out.printf(
-                "Player: %s, Player Stats: HP: %d, ATK: %d, DEF: %d, SPD: %d%n",
+                "Player: %s, %s Stats: HP: %d, ATK: %d, DEF: %d, SPD: %d%n",
+                player.getClass().getSimpleName(),
                 player.getClass().getSimpleName(),
                 player.getHp(),
                 player.getAttack(),
@@ -271,15 +272,38 @@ public class Main {
                 })
                 .collect(Collectors.joining(" + ")));
 
-        String levelLine = "Level: " + level.getDifficulty() + " - " + formatEnemySummary(initialEnemies);
-        if (backupEnemies != null && !backupEnemies.isEmpty()) {
-            levelLine += " | Backup: " + formatBackupNames(backupEnemies);
+        // Level line: "Level: Easy (3 Goblins) – A, B, C, Goblin Stats: ..."
+        String levelLine = "Level: " + level.getDifficulty() + " (" + formatEnemySummary(initialEnemies) + ")";
+
+        // Extract A, B, C from names like "Goblin A"
+        String names = initialEnemies.stream()
+                .map(Enemy::getDisplayName)
+                .map(n -> {
+                    String[] p = n.split(" ");
+                    return p.length > 1 ? p[1] : p[0];
+                })
+                .collect(Collectors.joining(", "));
+        if (!names.isEmpty()) {
+            levelLine += " – " + names;
         }
+
+        // Inline single enemy stats (first type)
+        if (initialEnemies != null && !initialEnemies.isEmpty()) {
+            Enemy e = initialEnemies.get(0);
+            levelLine += String.format(
+                    ", %s Stats: HP: %d, ATK: %d, DEF: %d, SPD: %d",
+                    e.getClass().getSimpleName(),
+                    e.getHp(),
+                    e.getAttack(),
+                    e.getDefense(),
+                    e.getSpeed()
+            );
+        }
+
         System.out.println(levelLine);
 
-        printEnemyStats(initialEnemies, backupEnemies);
-
-        System.out.println(formatTurnOrderLine(player, initialEnemies));
+        // Grouped turn order: "Player → Goblins"
+        System.out.println(formatGroupedTurnOrder(player, initialEnemies));
         System.out.println();
     }
 
@@ -508,5 +532,21 @@ public class Main {
         backup.add(new Wolf(strategy));
         backup.add(new Wolf(strategy));
         return backup;
+    }
+    private static String formatGroupedTurnOrder(Player player, List<Enemy> enemies) {
+        if (enemies == null || enemies.isEmpty()) {
+            return "Turn Order: " + player.getClass().getSimpleName() + " (SPD " + player.getSpeed() + ")";
+        }
+
+        int enemySpeed = enemies.get(0).getSpeed();
+        String enemyType = enemies.get(0).getClass().getSimpleName() + "s";
+
+        return String.format(
+                "Turn Order: %s (SPD %d) → %s (SPD %d)",
+                player.getClass().getSimpleName(),
+                player.getSpeed(),
+                enemyType,
+                enemySpeed
+        );
     }
 }
