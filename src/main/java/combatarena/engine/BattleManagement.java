@@ -260,7 +260,7 @@ public class BattleManagement {
 
                 if (item instanceof PowerStone) {
                     if ("Arcane Blast".equals(getSkillDisplayName(playerEntity))) {
-                        item.use(new ActionContext(playerEntity, new ArrayList<>(aliveEnemies), item));
+                        item.consume();
                         executeArcaneBlast(playerEntity, new ArrayList<>(aliveEnemies), ui, true);
                     } else {
                         Enemy target = ui.chooseTarget(aliveEnemies);
