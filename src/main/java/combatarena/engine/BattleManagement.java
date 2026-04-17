@@ -106,6 +106,10 @@ public class BattleManagement {
                 break;
             }
         }
+
+        if (player != null) {
+            player.clearArcaneBuffs();
+        }
     }
 
     public void executeTurn(ActionContext context) {
@@ -184,11 +188,13 @@ public class BattleManagement {
             return;
         }
 
+        // Cooldown decrements once when the player actually starts their turn.
+        playerEntity.decrementCooldown();
+
         while (true) {
             String input = ui.promptPlayerAction(playerEntity);
 
             if ("1".equals(input)) {
-                playerEntity.decrementCooldown();
                 Enemy target = ui.chooseTarget(aliveEnemies);
                 if (target == null) {
                     return;
@@ -214,7 +220,6 @@ public class BattleManagement {
             }
 
             if ("2".equals(input)) {
-                playerEntity.decrementCooldown();
                 int beforeDef = playerEntity.getDefense();
                 Action defend = new Defend();
                 ActionResult result = defend.execute(new ActionContext(playerEntity, List.of(playerEntity), null));
@@ -231,8 +236,6 @@ public class BattleManagement {
                 if (item == null) {
                     continue;
                 }
-
-                playerEntity.decrementCooldown();
 
                 if (item instanceof Potion) {
                     Character target = playerEntity;
@@ -256,27 +259,32 @@ public class BattleManagement {
                 }
 
                 if (item instanceof PowerStone) {
-                    Enemy target = ui.chooseTarget(aliveEnemies);
-                    if (target == null) {
-                        return;
+                    if ("Arcane Blast".equals(getSkillDisplayName(playerEntity))) {
+                        item.use(new ActionContext(playerEntity, new ArrayList<>(aliveEnemies), item));
+                        executeArcaneBlast(playerEntity, new ArrayList<>(aliveEnemies), ui, true);
+                    } else {
+                        Enemy target = ui.chooseTarget(aliveEnemies);
+                        if (target == null) {
+                            return;
+                        }
+
+                        int beforeHp = target.getHp();
+                        ActionResult result = item.use(new ActionContext(playerEntity, List.of(target), item));
+                        applyResult(target, result);
+                        int afterHp = target.getHp();
+
+                        ui.printPowerStoneLine(
+                                getDisplayName(playerEntity),
+                                getSkillDisplayName(playerEntity),
+                                getDisplayName(target),
+                                beforeHp,
+                                afterHp,
+                                playerEntity.getAttack(),
+                                target.getDefense(),
+                                result,
+                                playerEntity.getSpecialSkillCd()
+                        );
                     }
-
-                    int beforeHp = target.getHp();
-                    ActionResult result = item.use(new ActionContext(playerEntity, List.of(target), item));
-                    applyResult(target, result);
-                    int afterHp = target.getHp();
-
-                    ui.printPowerStoneLine(
-                            getDisplayName(playerEntity),
-                            getSkillDisplayName(playerEntity),
-                            getDisplayName(target),
-                            beforeHp,
-                            afterHp,
-                            playerEntity.getAttack(),
-                            target.getDefense(),
-                            result,
-                            playerEntity.getSpecialSkillCd()
-                    );
                     ui.setLastConsumedItemName("Power Stone");
                     return;
                 }
@@ -290,46 +298,10 @@ public class BattleManagement {
                     continue;
                 }
 
-                playerEntity.decrementCooldown();
-
                 String skillName = getSkillDisplayName(playerEntity);
 
                 if ("Arcane Blast".equals(skillName)) {
-                    ActionResult result = playerEntity.getSpecialSkill().execute(
-                            new ActionContext(playerEntity, new ArrayList<>(aliveEnemies), null));
-
-                    int killCount = 0;
-                    List<String> hitLines = new ArrayList<>();
-                    for (Enemy target : aliveEnemies) {
-                        int beforeHp = target.getHp();
-                        int dmg = Math.max(0, playerEntity.getAttack() - target.getDefense());
-                        target.takeDamage(playerEntity.getAttack()); // uses takeDamage which handles defense
-                        int afterHp = target.getHp();
-                        if (!target.isAlive()) {
-                            killCount++;
-                        }
-                        hitLines.add(getDisplayName(target) + ": HP: " + beforeHp + " → " + afterHp
-                                + " (dmg: " + playerEntity.getAttack() + "−" + target.getDefense()
-                                + "=" + Math.max(0, beforeHp - afterHp) + ")"
-                                + (!target.isAlive() ? " | " + getDisplayName(target) + " was defeated." : ""));
-                    }
-
-                    for (int i = 0; i < killCount; i++) {
-                        playerEntity.addEffect(new ArcaneBuff());
-                    }
-
-                    playerEntity.setSpecialSkillCd(3);
-
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(getDisplayName(playerEntity)).append(" → Arcane Blast → ");
-                    sb.append(String.join(" + ", hitLines));
-                    if (killCount > 0) {
-                        sb.append(" | +").append(killCount * 10).append(" ATK gained (")
-                                .append(killCount).append(" kill").append(killCount > 1 ? "s" : "").append(")");
-                    }
-                    sb.append(" | Cooldown: ").append(playerEntity.getSpecialSkillCd());
-                    ui.printMessage(sb.toString());
-
+                    executeArcaneBlast(playerEntity, new ArrayList<>(aliveEnemies), ui, false);
                 } else {
                     Enemy target = ui.chooseTarget(aliveEnemies);
                     if (target == null) {
@@ -364,13 +336,67 @@ public class BattleManagement {
         }
     }
 
+    private void executeArcaneBlast(Player playerEntity, List<Enemy> targets, UIGame ui, boolean triggeredByPowerStone) {
+        int killCount = 0;
+        List<String> hitLines = new ArrayList<>();
+        for (Enemy target : targets) {
+            if (target == null || !target.isAlive()) {
+                continue;
+            }
+
+            int beforeHp = target.getHp();
+            ActionResult targetResult = playerEntity.getSpecialSkill().execute(
+                    new ActionContext(playerEntity, List.of(target), null));
+            int appliedDamage = target.takeDamage(targetResult.getDamageGiven());
+            int afterHp = target.getHp();
+            if (!target.isAlive()) {
+                killCount++;
+            }
+
+            for (StatusEffect effect : targetResult.getEffectsApplied()) {
+                if (effect instanceof ArcaneBuff) {
+                    playerEntity.addEffect(new ArcaneBuff());
+                }
+            }
+
+            hitLines.add(getDisplayName(target) + ": HP: " + beforeHp + " -> " + afterHp
+                    + " (dmg: " + playerEntity.getAttack() + "-" + target.getDefense()
+                    + "=" + appliedDamage + ")"
+                    + (!target.isAlive() ? " | " + getDisplayName(target) + " was defeated." : ""));
+        }
+
+        if (!triggeredByPowerStone) {
+            playerEntity.setSpecialSkillCd(3);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(getDisplayName(playerEntity));
+        if (triggeredByPowerStone) {
+            sb.append(" -> Item -> Power Stone used -> Arcane Blast triggered -> ");
+        } else {
+            sb.append(" -> Arcane Blast -> ");
+        }
+        sb.append(String.join(" + ", hitLines));
+        if (killCount > 0) {
+            sb.append(" | +").append(killCount * 10).append(" ATK gained (")
+                    .append(killCount).append(" kill").append(killCount > 1 ? "s" : "").append(")");
+        }
+        if (triggeredByPowerStone) {
+            sb.append(" | Cooldown unchanged -> ")
+                    .append(playerEntity.getSpecialSkillCd())
+                    .append(" (Power Stone does not affect cooldown) | Power Stone consumed");
+        } else {
+            sb.append(" | Cooldown: ").append(playerEntity.getSpecialSkillCd());
+        }
+        ui.printMessage(sb.toString());
+    }
+
     public void applyResult(Character target, ActionResult result) {
         if (target == null || result == null) {
             return;
         }
 
-        int actualDamage = target.takeDamage(result.getDamageGiven());
-        result.setDamageGiven(actualDamage);
+        target.takeDamage(result.getDamageGiven());
 
         if (result.getHealAmount() > 0) {
             target.heal(result.getHealAmount());
