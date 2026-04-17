@@ -6,8 +6,11 @@ import combatarena.actions.Defend;
 import combatarena.actions.UseItemAction;
 import combatarena.actions.items.Item;
 import combatarena.actions.SpecialSkill;
+import combatarena.effects.ArcaneBuff;
+import combatarena.effects.StatusEffect;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class Player extends Character {
@@ -49,6 +52,17 @@ public class Player extends Character {
     public void decrementCooldown() {
         if (specialSkillCd > 0) {
             specialSkillCd--;
+        }
+    }
+
+    public void clearArcaneBuffs() {
+        Iterator<StatusEffect> iterator = activeEffects.iterator();
+        while (iterator.hasNext()) {
+            StatusEffect effect = iterator.next();
+            if (effect instanceof ArcaneBuff) {
+                effect.remove(this);
+                iterator.remove();
+            }
         }
     }
 
