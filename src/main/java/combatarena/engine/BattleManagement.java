@@ -11,7 +11,6 @@ import combatarena.effects.ArcaneBuff;
 import combatarena.entities.Character;
 import combatarena.entities.Enemy;
 import combatarena.entities.Player;
-import combatarena.effects.SmokeBombInvulnerability;
 import combatarena.effects.StatusEffect;
 import combatarena.effects.Stun;
 import combatarena.level.Level;
@@ -30,6 +29,7 @@ public class BattleManagement {
     private int roundNumber;
     private final TurnOrderStrategy turnOrderStrategy;
     private final Level selectedLevel;
+    private UIGame battleUi;
 
     public BattleManagement(Player player, List<Enemy> enemies,
                             TurnOrderStrategy strategy, Level level) {
@@ -40,9 +40,21 @@ public class BattleManagement {
         this.turnOrderList = new ArrayList<>();
         this.currentTurnIndex = 0;
         this.roundNumber = 1;
+        this.battleUi = null;
+    }
+
+    public void startBattle() {
+        if (battleUi == null) {
+            battleUi = new UIGame(this);
+        }
+        startBattle(battleUi);
     }
 
     public void startBattle(UIGame ui) {
+        this.battleUi = ui;
+        if (ui != null) {
+            ui.setGameSnapshot(this);
+        }
         turnOrderList = determineTurnOrder();
         ui.printRoundHeader(roundNumber, turnOrderList);
 
@@ -93,6 +105,23 @@ public class BattleManagement {
             if (isBattleOver()) {
                 break;
             }
+        }
+    }
+
+    public void executeTurn(ActionContext context) {
+        if (context == null || context.getUser() == null || context.getTargets() == null || context.getTargets().isEmpty()) {
+            return;
+        }
+
+        ActionResult result;
+        if (context.getSelectedItem() != null) {
+            result = context.getSelectedItem().use(context);
+        } else {
+            result = new BasicAttack().execute(context);
+        }
+
+        for (Character target : context.getTargets()) {
+            applyResult(target, result);
         }
     }
 
@@ -356,15 +385,20 @@ public class BattleManagement {
         }
     }
 
+    public void applyResult(ActionResult result) {
+        if (result == null || player == null) {
+            return;
+        }
+        applyResult(player, result);
+    }
+
     public Character nextTurn(UIGame ui) {
         if (turnOrderList == null || turnOrderList.isEmpty()) {
             return null;
         }
 
         if (currentTurnIndex >= turnOrderList.size()) {
-            if (isWaveCleared() && hasPendingBackup()) {
-                spawnBackupWave(ui);
-            }
+            checkAndSpawnBackup(ui);
 
             ui.printEndOfRound(player, enemies, roundNumber);
 
@@ -403,13 +437,29 @@ public class BattleManagement {
         return backupWave != null && !backupWave.isEmpty() && !selectedLevel.isBackupSpawnTriggered();
     }
 
-    private void spawnBackupWave(UIGame ui) {
+    public void checkAndSpawnBackup() {
         if (selectedLevel == null || enemies == null || !hasPendingBackup()) {
             return;
         }
 
         List<Enemy> backupWave = selectedLevel.getBackupWave();
-        ui.printBackupWaveAnnouncement(backupWave);
+        enemies.addAll(backupWave);
+        selectedLevel.setBackupSpawnTriggered(true);
+    }
+
+    private void checkAndSpawnBackup(UIGame ui) {
+        if (!isWaveCleared() || !hasPendingBackup()) {
+            return;
+        }
+
+        if (selectedLevel == null || enemies == null || !hasPendingBackup()) {
+            return;
+        }
+
+        List<Enemy> backupWave = selectedLevel.getBackupWave();
+        if (ui != null) {
+            ui.printBackupWaveAnnouncement(backupWave);
+        }
 
         enemies.addAll(backupWave);
         selectedLevel.setBackupSpawnTriggered(true);
