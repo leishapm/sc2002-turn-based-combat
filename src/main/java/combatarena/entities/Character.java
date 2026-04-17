@@ -61,7 +61,8 @@ public abstract class Character {
             return 0;
         }
 
-        int finalDamage = Math.max(1, damage - defense);
+        // FIX: spec says Damage = max(0, ATK - DEF), minimum is 0 not 1
+        int finalDamage = Math.max(0, damage - defense);
         hp -= finalDamage;
 
         if (hp < 0) {
@@ -143,9 +144,9 @@ public abstract class Character {
 
     public String getStatusSummary() {
         return "HP: " + hp + "/" + maxHp +
-               " | ATK: " + attack +
-               " | DEF: " + defense +
-               " | SPD: " + speed +
-               " | Effects: " + activeEffects.size();
+                " | ATK: " + attack +
+                " | DEF: " + defense +
+                " | SPD: " + speed +
+                " | Effects: " + activeEffects.size();
     }
 }
