@@ -48,7 +48,7 @@ public class Player extends Character {
     }
 
     public void reset() {
-        // FIX: restore HP, clear cooldown, and clear all active effects
+        
         this.hp = this.maxHp;
         this.specialSkillCd = 0;
         this.activeEffects.clear();
