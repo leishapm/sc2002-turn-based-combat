@@ -7,7 +7,8 @@ public class ArcaneBuff extends StatusEffect {
     private final int bonus = 10;
 
     public ArcaneBuff() {
-        super("ArcaneBuff", 2);
+ 
+        super("ArcaneBuff", Integer.MAX_VALUE);
     }
 
     @Override
@@ -17,11 +18,11 @@ public class ArcaneBuff extends StatusEffect {
 
     @Override
     public void tick(Character target) {
-        decrementDuration();
+    
     }
 
     @Override
     public void remove(Character target) {
-        target.decreaseAttack(bonus);
+        
     }
 }
