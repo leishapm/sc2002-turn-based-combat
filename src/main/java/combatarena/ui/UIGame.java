@@ -1,19 +1,35 @@
 package combatarena.ui;
 
 import combatarena.actions.Action;
+import combatarena.actions.skills.ArcaneBlast;
+import combatarena.actions.skills.ShieldBash;
 import combatarena.actions.items.Item;
+import combatarena.actions.items.Potion;
+import combatarena.actions.items.PowerStone;
+import combatarena.actions.items.SmokeBomb;
 import combatarena.engine.BattleManagement;
+import combatarena.engine.BasicAttackStrategy;
+import combatarena.engine.EnemyActionStrategy;
 import combatarena.entities.Character;
+import combatarena.entities.Goblin;
 import combatarena.entities.Enemy;
 import combatarena.entities.Player;
+import combatarena.entities.Warrior;
+import combatarena.entities.Wizard;
+import combatarena.entities.Wolf;
 import combatarena.effects.SmokeBombInvulnerability;
 import combatarena.effects.StatusEffect;
 import combatarena.effects.Stun;
 import combatarena.level.Level;
+import combatarena.level.Level1;
+import combatarena.level.Level2;
+import combatarena.level.Level3;
 import combatarena.util.ActionResult;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
@@ -24,11 +40,20 @@ public class UIGame {
     private String lastConsumedItemName;
     private String lastPrintedTurnOrderLine;
 
-    public UIGame(BattleManagement gameSnapshot) {
-        this.gameSnapshot = gameSnapshot;
-        this.scanner = new Scanner(System.in);
+    public UIGame(Scanner scanner) {
+        this.gameSnapshot = null;
+        this.scanner = scanner;
         this.lastConsumedItemName = null;
         this.lastPrintedTurnOrderLine = null;
+    }
+
+    public UIGame(BattleManagement gameSnapshot) {
+        this(new Scanner(System.in));
+        this.gameSnapshot = gameSnapshot;
+    }
+
+    public UIGame() {
+        this(new Scanner(System.in));
     }
 
     public BattleManagement getGameSnapshot() {
@@ -67,6 +92,133 @@ public class UIGame {
         }
     }
 
+    public Player choosePlayer() {
+        while (true) {
+            System.out.println("Choose your player:");
+            System.out.println("1. Warrior");
+            System.out.println("2. Wizard");
+            System.out.print("Enter choice: ");
+
+            String input = scanner.nextLine().trim();
+            if ("1".equals(input)) {
+                return new Warrior(new ShieldBash());
+            }
+            if ("2".equals(input)) {
+                return new Wizard(new ArcaneBlast());
+            }
+            System.out.println("Invalid choice. Try again.");
+        }
+    }
+
+    public List<Item> chooseItems() {
+        List<Item> items = new ArrayList<>();
+        System.out.println();
+        System.out.println("Choose 2 items:");
+
+        for (int pick = 1; pick <= 2; pick++) {
+            while (true) {
+                System.out.println();
+                System.out.println("Pick item " + pick + ":");
+                System.out.println("1. Potion");
+                System.out.println("2. Smoke Bomb");
+                System.out.println("3. Power Stone");
+                System.out.print("Enter choice: ");
+
+                String input = scanner.nextLine().trim();
+                if ("1".equals(input)) {
+                    addOrStackItem(items, new Potion());
+                    break;
+                }
+                if ("2".equals(input)) {
+                    addOrStackItem(items, new SmokeBomb());
+                    break;
+                }
+                if ("3".equals(input)) {
+                    addOrStackItem(items, new PowerStone());
+                    break;
+                }
+                System.out.println("Invalid choice. Try again.");
+            }
+        }
+
+        return items;
+    }
+
+    public Level chooseLevel() {
+        while (true) {
+            System.out.println();
+            System.out.println("Choose level:");
+            System.out.println("1. Level 1");
+            System.out.println("2. Level 2");
+            System.out.println("3. Level 3");
+            System.out.print("Enter choice: ");
+
+            String input = scanner.nextLine().trim();
+            if ("1".equals(input)) {
+                return createLevelFromChoice(1);
+            }
+            if ("2".equals(input)) {
+                return createLevelFromChoice(2);
+            }
+            if ("3".equals(input)) {
+                return createLevelFromChoice(3);
+            }
+            System.out.println("Invalid choice. Try again.");
+        }
+    }
+
+    public void printSetup(Player player, List<Item> items, Level level,
+                           List<Enemy> initialEnemies, List<Enemy> backupEnemies) {
+        System.out.printf(
+                "Player: %s, %s Stats: HP: %d, ATK: %d, DEF: %d, SPD: %d%n",
+                player.getClass().getSimpleName(),
+                player.getClass().getSimpleName(),
+                player.getHp(),
+                player.getAttack(),
+                player.getDefense(),
+                player.getSpeed()
+        );
+
+        System.out.print("Items: ");
+        System.out.println(items.stream()
+                .map(item -> item.getQuantity() > 1 ? formatItemName(item) + " x" + item.getQuantity() : formatItemName(item))
+                .collect(Collectors.joining(" + ")));
+
+        String levelLine = "Level: " + level.getDifficulty() + " (" + formatEnemySummary(initialEnemies) + ")";
+        String names = initialEnemies.stream()
+                .map(Enemy::getDisplayName)
+                .map(n -> {
+                    String[] p = n.split(" ");
+                    return p.length > 1 ? p[1] : p[0];
+                })
+                .collect(Collectors.joining(", "));
+        if (!names.isEmpty()) {
+            levelLine += " - " + names;
+        }
+
+        if (initialEnemies != null && !initialEnemies.isEmpty()) {
+            Enemy e = initialEnemies.get(0);
+            levelLine += String.format(", %s Stats: HP: %d, ATK: %d, DEF: %d, SPD: %d",
+                    e.getClass().getSimpleName(), e.getHp(), e.getAttack(), e.getDefense(), e.getSpeed());
+        }
+
+        System.out.println(levelLine);
+        System.out.println(formatGroupedTurnOrder(player, initialEnemies));
+        System.out.println();
+    }
+
+    public void showVictory(Player player, int rounds) {
+        System.out.println();
+        System.out.println("Victory");
+        System.out.printf(
+                "Result: Player Victory Remaining HP: %d / %d | Total Rounds: %d | %s%n",
+                player.getHp(),
+                player.getMaxHp(),
+                rounds,
+                formatRemainingItems(player)
+        );
+    }
+
     public void showVictory(int hp, int rounds) {
         System.out.println("Victory!");
         System.out.println("HP left: " + hp);
@@ -74,55 +226,56 @@ public class UIGame {
     }
 
     public void showDefeat(int enemiesLeft, int rounds) {
-        System.out.println("Defeat.");
-        System.out.println("Enemies left: " + enemiesLeft);
-        System.out.println("Rounds survived: " + rounds);
+        System.out.println();
+        System.out.println("Defeat");
+        System.out.printf(
+                "Result: Player Defeat Enemies remaining: %d | Total Rounds Survived: %d%n",
+                enemiesLeft,
+                rounds
+        );
     }
 
-    public Player choosePlayer() {
-        System.out.println("Choose player:");
-        System.out.println("1. Warrior");
-        System.out.println("2. Wizard");
+    public String choosePostBattleOption() {
+        System.out.println();
+        System.out.println("1. Replay same settings");
+        System.out.println("2. New game");
+        System.out.println("3. Exit");
         System.out.print("Enter choice: ");
-
-        String input = scanner.nextLine().trim();
-
-        switch (input) {
-            case "1":
-                System.out.println("Warrior selected.");
-                return null;
-            case "2":
-                System.out.println("Wizard selected.");
-                return null;
-            default:
-                System.out.println("Invalid choice.");
-                return null;
-        }
+        return scanner.nextLine().trim();
     }
 
-    public List<Item> chooseItems() {
-        System.out.println("Choose items feature is not wired yet.");
-        return new ArrayList<>();
+    public List<Enemy> createInitialEnemies(Level level) {
+        EnemyActionStrategy strategy = new BasicAttackStrategy();
+        if (level instanceof Level1) {
+            List<Enemy> enemies = createLevel1Enemies(strategy);
+            assignEnemyNames(enemies);
+            return enemies;
+        }
+        if (level instanceof Level2) {
+            List<Enemy> enemies = createLevel2Enemies(strategy);
+            assignEnemyNames(enemies);
+            return enemies;
+        }
+        List<Enemy> enemies = createLevel3Enemies(strategy);
+        assignEnemyNames(enemies);
+        return enemies;
     }
 
-    public Level chooseLevel() {
-        System.out.print("Choose level (1, 2, 3): ");
-        String input = scanner.nextLine().trim();
-
-        switch (input) {
-            case "1":
-                System.out.println("Level 1 selected.");
-                return null;
-            case "2":
-                System.out.println("Level 2 selected.");
-                return null;
-            case "3":
-                System.out.println("Level 3 selected.");
-                return null;
-            default:
-                System.out.println("Invalid level.");
-                return null;
+    public List<Enemy> createBackupEnemies(Level level) {
+        EnemyActionStrategy strategy = new BasicAttackStrategy();
+        if (level instanceof Level1) {
+            List<Enemy> enemies = createLevel1Backup(strategy);
+            assignEnemyNames(enemies);
+            return enemies;
         }
+        if (level instanceof Level2) {
+            List<Enemy> enemies = createLevel2Backup(strategy);
+            assignEnemyNames(enemies);
+            return enemies;
+        }
+        List<Enemy> enemies = createLevel3Backup(strategy);
+        assignEnemyNames(enemies);
+        return enemies;
     }
 
     public Action chooseAction(List<Action> available) {
@@ -137,7 +290,6 @@ public class UIGame {
 
         System.out.print("Enter choice: ");
         String input = scanner.nextLine().trim();
-
         try {
             int choice = Integer.parseInt(input);
             if (choice >= 1 && choice <= available.size()) {
@@ -145,8 +297,30 @@ public class UIGame {
             }
         } catch (NumberFormatException ignored) {
         }
-
         return available.get(0);
+    }
+
+    private Level createLevelFromChoice(int choice) {
+        EnemyActionStrategy enemyStrategy = new BasicAttackStrategy();
+        if (choice == 1) {
+            List<Enemy> initial = createLevel1Enemies(enemyStrategy);
+            List<Enemy> backup = createLevel1Backup(enemyStrategy);
+            assignEnemyNames(initial);
+            assignEnemyNames(backup);
+            return new Level1(initial, backup);
+        }
+        if (choice == 2) {
+            List<Enemy> initial = createLevel2Enemies(enemyStrategy);
+            List<Enemy> backup = createLevel2Backup(enemyStrategy);
+            assignEnemyNames(initial);
+            assignEnemyNames(backup);
+            return new Level2(initial, backup);
+        }
+        List<Enemy> initial = createLevel3Enemies(enemyStrategy);
+        List<Enemy> backup = createLevel3Backup(enemyStrategy);
+        assignEnemyNames(initial);
+        assignEnemyNames(backup);
+        return new Level3(initial, backup);
     }
 
     public Enemy chooseTarget(List<Enemy> enemies) {
@@ -456,5 +630,149 @@ public class UIGame {
             return enemy.getDisplayName();
         }
         return character.getClass().getSimpleName();
+    }
+
+    private void addOrStackItem(List<Item> items, Item newItem) {
+        for (Item item : items) {
+            if (item.getClass().equals(newItem.getClass())) {
+                item.addQuantity(1);
+                return;
+            }
+        }
+        items.add(newItem);
+    }
+
+    private String formatRemainingItems(Player player) {
+        if (player.getInventory() == null || player.getInventory().isEmpty()) {
+            return "Remaining Items: None";
+        }
+
+        Map<String, Integer> totals = new LinkedHashMap<>();
+        for (Item item : player.getInventory()) {
+            if (item == null) {
+                continue;
+            }
+            String name = formatItemName(item);
+            totals.put(name, totals.getOrDefault(name, 0) + item.getQuantity());
+        }
+
+        return totals.entrySet().stream()
+                .map(entry -> {
+                    String text = "Remaining " + entry.getKey() + ": " + entry.getValue();
+                    if (entry.getValue() > 0) {
+                        text += " <- unused";
+                    }
+                    return text;
+                })
+                .collect(Collectors.joining(" | "));
+    }
+
+    private String formatEnemySummary(List<Enemy> enemies) {
+        if (enemies == null || enemies.isEmpty()) {
+            return "None";
+        }
+
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (Enemy enemy : enemies) {
+            String type = enemy.getClass().getSimpleName();
+            counts.put(type, counts.getOrDefault(type, 0) + 1);
+        }
+
+        return counts.entrySet().stream()
+                .map(entry -> entry.getValue() + " " + pluralize(entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(" + "));
+    }
+
+    private String pluralize(String word, int count) {
+        if (count == 1) {
+            return word;
+        }
+        if ("Wolf".equals(word)) {
+            return "Wolves";
+        }
+        return word + "s";
+    }
+
+    private String formatGroupedTurnOrder(Player player, List<Enemy> enemies) {
+        if (enemies == null || enemies.isEmpty()) {
+            return "Turn Order: " + player.getClass().getSimpleName() + " (SPD " + player.getSpeed() + ")";
+        }
+
+        int enemySpeed = enemies.get(0).getSpeed();
+        String enemyType = enemies.get(0).getClass().getSimpleName() + "s";
+
+        return String.format(
+                "Turn Order: %s (SPD %d) -> %s (SPD %d)",
+                player.getClass().getSimpleName(),
+                player.getSpeed(),
+                enemyType,
+                enemySpeed
+        );
+    }
+
+    private void assignEnemyNames(List<Enemy> enemies) {
+        if (enemies == null || enemies.isEmpty()) {
+            return;
+        }
+
+        Map<String, Integer> totalCount = new LinkedHashMap<>();
+        for (Enemy enemy : enemies) {
+            String type = enemy.getClass().getSimpleName();
+            totalCount.put(type, totalCount.getOrDefault(type, 0) + 1);
+        }
+
+        Map<String, Integer> seenCount = new LinkedHashMap<>();
+        for (Enemy enemy : enemies) {
+            String type = enemy.getClass().getSimpleName();
+            int seen = seenCount.getOrDefault(type, 0) + 1;
+            seenCount.put(type, seen);
+
+            if (totalCount.get(type) == 1) {
+                enemy.setName(type);
+            } else {
+                enemy.setName(type + " " + (char) ('A' + seen - 1));
+            }
+        }
+    }
+
+    private List<Enemy> createLevel1Enemies(EnemyActionStrategy strategy) {
+        List<Enemy> enemies = new ArrayList<>();
+        enemies.add(new Goblin(strategy));
+        enemies.add(new Goblin(strategy));
+        enemies.add(new Goblin(strategy));
+        return enemies;
+    }
+
+    private List<Enemy> createLevel1Backup(EnemyActionStrategy strategy) {
+        return new ArrayList<>();
+    }
+
+    private List<Enemy> createLevel2Enemies(EnemyActionStrategy strategy) {
+        List<Enemy> enemies = new ArrayList<>();
+        enemies.add(new Goblin(strategy));
+        enemies.add(new Wolf(strategy));
+        return enemies;
+    }
+
+    private List<Enemy> createLevel2Backup(EnemyActionStrategy strategy) {
+        List<Enemy> backup = new ArrayList<>();
+        backup.add(new Wolf(strategy));
+        backup.add(new Wolf(strategy));
+        return backup;
+    }
+
+    private List<Enemy> createLevel3Enemies(EnemyActionStrategy strategy) {
+        List<Enemy> enemies = new ArrayList<>();
+        enemies.add(new Goblin(strategy));
+        enemies.add(new Goblin(strategy));
+        return enemies;
+    }
+
+    private List<Enemy> createLevel3Backup(EnemyActionStrategy strategy) {
+        List<Enemy> backup = new ArrayList<>();
+        backup.add(new Goblin(strategy));
+        backup.add(new Wolf(strategy));
+        backup.add(new Wolf(strategy));
+        return backup;
     }
 }
