@@ -61,7 +61,7 @@ public abstract class Character {
             return 0;
         }
 
-        // FIX: spec says Damage = max(0, ATK - DEF), minimum is 0 not 1
+
         int finalDamage = Math.max(0, damage - defense);
         hp -= finalDamage;
 
