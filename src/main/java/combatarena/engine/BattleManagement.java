@@ -2,24 +2,24 @@ package combatarena.engine;
 
 import combatarena.actions.Action;
 import combatarena.actions.BasicAttack;
-import combatarena.actions.UseItemAction;
+import combatarena.actions.Defend;
 import combatarena.actions.items.Item;
 import combatarena.actions.items.Potion;
 import combatarena.actions.items.PowerStone;
 import combatarena.actions.items.SmokeBomb;
+import combatarena.effects.ArcaneBuff;
 import combatarena.entities.Character;
 import combatarena.entities.Enemy;
 import combatarena.entities.Player;
 import combatarena.effects.SmokeBombInvulnerability;
-import combatarena.effects.Stun;
 import combatarena.effects.StatusEffect;
+import combatarena.effects.Stun;
 import combatarena.level.Level;
+import combatarena.ui.UIGame;
 import combatarena.util.ActionResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors;
 
 public class BattleManagement {
 
@@ -30,13 +30,9 @@ public class BattleManagement {
     private int roundNumber;
     private final TurnOrderStrategy turnOrderStrategy;
     private final Level selectedLevel;
-    private final Scanner scanner;
-    private String lastConsumedItemName;
-    private String lastPrintedTurnOrderLine;
 
     public BattleManagement(Player player, List<Enemy> enemies,
-                            TurnOrderStrategy strategy, Level level,
-                            Scanner scanner) {
+                            TurnOrderStrategy strategy, Level level) {
         this.player = player;
         this.enemies = enemies;
         this.turnOrderStrategy = strategy;
@@ -44,24 +40,20 @@ public class BattleManagement {
         this.turnOrderList = new ArrayList<>();
         this.currentTurnIndex = 0;
         this.roundNumber = 1;
-        this.scanner = scanner != null ? scanner : new Scanner(System.in);
-        this.lastConsumedItemName = null;
-        this.lastPrintedTurnOrderLine = null;
     }
 
-    public void startBattle() {
+    public void startBattle(UIGame ui) {
         turnOrderList = determineTurnOrder();
-        lastPrintedTurnOrderLine = formatTurnOrderLine(turnOrderList);
-        printRoundHeader();
+        ui.printRoundHeader(roundNumber, turnOrderList);
 
         while (!isBattleOver()) {
-            Character current = nextTurn();
+            Character current = nextTurn(ui);
             if (current == null) {
                 continue;
             }
 
             if (!current.isAlive()) {
-                printEliminatedSkip(current, false);
+                ui.printEliminatedSkip(current, false);
                 continue;
             }
 
@@ -69,14 +61,12 @@ public class BattleManagement {
             current.updateEffects();
 
             if (!current.isAlive()) {
-                printEliminatedSkip(current, stunnedBeforeUpdate);
+                ui.printEliminatedSkip(current, stunnedBeforeUpdate);
                 continue;
             }
 
             if (current.isStunned()) {
-
                 boolean willExpire = false;
-
                 if (current.getActiveEffects() != null) {
                     for (StatusEffect effect : current.getActiveEffects()) {
                         if (effect instanceof Stun && effect.getDuration() == 1) {
@@ -87,18 +77,17 @@ public class BattleManagement {
                 }
 
                 if (willExpire) {
-                    System.out.println(getDisplayName(current) + " → STUNNED: Turn skipped | Stun expires");
+                    ui.printStunnedSkip(current, true);
                 } else {
-                    System.out.println(getDisplayName(current) + " → STUNNED: Turn skipped");
+                    ui.printStunnedSkip(current, false);
                 }
-
                 continue;
             }
 
             if (current instanceof Player playerEntity) {
-                executePlayerTurn(playerEntity);
+                executePlayerTurn(playerEntity, ui);
             } else if (current instanceof Enemy enemy) {
-                executeEnemyTurn(enemy);
+                executeEnemyTurn(enemy, ui);
             }
 
             if (isBattleOver()) {
@@ -129,7 +118,7 @@ public class BattleManagement {
         return turnOrderStrategy.determineTurnOrder(all);
     }
 
-    private void executeEnemyTurn(Enemy enemy) {
+    private void executeEnemyTurn(Enemy enemy, UIGame ui) {
         if (player == null || !player.isAlive()) {
             return;
         }
@@ -148,9 +137,9 @@ public class BattleManagement {
         applyResult(player, result);
         int afterHp = player.getHp();
 
-        printDamageLine(
+        ui.printDamageLine(
                 getDisplayName(enemy),
-                "BasicAttack",
+                action.getClass().getSimpleName(),
                 getDisplayName(player),
                 beforeHp,
                 afterHp,
@@ -160,26 +149,18 @@ public class BattleManagement {
         );
     }
 
-    private void executePlayerTurn(Player playerEntity) {
-        playerEntity.decrementCooldown();
-
+    private void executePlayerTurn(Player playerEntity, UIGame ui) {
         List<Enemy> aliveEnemies = getAliveEnemies();
         if (aliveEnemies.isEmpty()) {
             return;
         }
 
         while (true) {
-            System.out.println();
-            System.out.println("Choose your action:");
-            System.out.println("1. Basic Attack");
-            System.out.println("2. Use Item");
-            System.out.println("3. Special Skill" + (playerEntity.isSkillAvailable() ? "" : " (cooldown " + playerEntity.getSpecialSkillCd() + ")"));
-            System.out.print("Enter choice: ");
-
-            String input = scanner.nextLine().trim();
+            String input = ui.promptPlayerAction(playerEntity);
 
             if ("1".equals(input)) {
-                Enemy target = chooseTarget(aliveEnemies);
+                playerEntity.decrementCooldown();
+                Enemy target = ui.chooseTarget(aliveEnemies);
                 if (target == null) {
                     return;
                 }
@@ -190,7 +171,7 @@ public class BattleManagement {
                 applyResult(target, result);
                 int afterHp = target.getHp();
 
-                printDamageLine(
+                ui.printDamageLine(
                         getDisplayName(playerEntity),
                         "BasicAttack",
                         getDisplayName(target),
@@ -204,10 +185,25 @@ public class BattleManagement {
             }
 
             if ("2".equals(input)) {
-                Item item = chooseItem(playerEntity);
+                playerEntity.decrementCooldown();
+                int beforeDef = playerEntity.getDefense();
+                Action defend = new Defend();
+                ActionResult result = defend.execute(new ActionContext(playerEntity, List.of(playerEntity), null));
+                for (combatarena.effects.StatusEffect effect : result.getEffectsApplied()) {
+                    playerEntity.addEffect(effect);
+                }
+                int afterDef = playerEntity.getDefense();
+                ui.printDefendLine(getDisplayName(playerEntity), beforeDef, afterDef);
+                return;
+            }
+
+            if ("3".equals(input)) {
+                Item item = ui.chooseItem(playerEntity);
                 if (item == null) {
                     continue;
                 }
+
+                playerEntity.decrementCooldown();
 
                 if (item instanceof Potion) {
                     Character target = playerEntity;
@@ -216,8 +212,8 @@ public class BattleManagement {
                     applyResult(target, result);
                     int afterHp = target.getHp();
 
-                    printPotionLine(getDisplayName(playerEntity), beforeHp, afterHp, result.getHealAmount());
-                    lastConsumedItemName = "Potion";
+                    ui.printPotionLine(getDisplayName(playerEntity), beforeHp, afterHp, result.getHealAmount());
+                    ui.setLastConsumedItemName("Potion");
                     return;
                 }
 
@@ -225,13 +221,13 @@ public class BattleManagement {
                     Character target = playerEntity;
                     ActionResult result = item.use(new ActionContext(playerEntity, List.of(target), item));
                     applyResult(target, result);
-                    printSmokeBombLine(getDisplayName(playerEntity));
-                    lastConsumedItemName = "Smoke Bomb";
+                    ui.printSmokeBombLine(getDisplayName(playerEntity));
+                    ui.setLastConsumedItemName("Smoke Bomb");
                     return;
                 }
 
                 if (item instanceof PowerStone) {
-                    Enemy target = chooseTarget(aliveEnemies);
+                    Enemy target = ui.chooseTarget(aliveEnemies);
                     if (target == null) {
                         return;
                     }
@@ -241,7 +237,7 @@ public class BattleManagement {
                     applyResult(target, result);
                     int afterHp = target.getHp();
 
-                    printPowerStoneLine(
+                    ui.printPowerStoneLine(
                             getDisplayName(playerEntity),
                             getSkillDisplayName(playerEntity),
                             getDisplayName(target),
@@ -252,132 +248,91 @@ public class BattleManagement {
                             result,
                             playerEntity.getSpecialSkillCd()
                     );
-                    lastConsumedItemName = "Power Stone";
+                    ui.setLastConsumedItemName("Power Stone");
                     return;
                 }
 
                 return;
             }
 
-            if ("3".equals(input)) {
+            if ("4".equals(input)) {
                 if (!playerEntity.isSkillAvailable() || playerEntity.getSpecialSkill() == null) {
-                    System.out.println("Special Skill not available.");
+                    ui.printMessage("Special Skill not available.");
                     continue;
                 }
 
-                Enemy target = chooseTarget(aliveEnemies);
-                if (target == null) {
-                    return;
+                playerEntity.decrementCooldown();
+
+                String skillName = getSkillDisplayName(playerEntity);
+
+                if ("Arcane Blast".equals(skillName)) {
+                    ActionResult result = playerEntity.getSpecialSkill().execute(
+                            new ActionContext(playerEntity, new ArrayList<>(aliveEnemies), null));
+
+                    int killCount = 0;
+                    List<String> hitLines = new ArrayList<>();
+                    for (Enemy target : aliveEnemies) {
+                        int beforeHp = target.getHp();
+                        int dmg = Math.max(0, playerEntity.getAttack() - target.getDefense());
+                        target.takeDamage(playerEntity.getAttack()); // uses takeDamage which handles defense
+                        int afterHp = target.getHp();
+                        if (!target.isAlive()) {
+                            killCount++;
+                        }
+                        hitLines.add(getDisplayName(target) + ": HP: " + beforeHp + " → " + afterHp
+                                + " (dmg: " + playerEntity.getAttack() + "−" + target.getDefense()
+                                + "=" + Math.max(0, beforeHp - afterHp) + ")"
+                                + (!target.isAlive() ? " | " + getDisplayName(target) + " was defeated." : ""));
+                    }
+
+                    for (int i = 0; i < killCount; i++) {
+                        playerEntity.addEffect(new ArcaneBuff());
+                    }
+
+                    playerEntity.setSpecialSkillCd(3);
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(getDisplayName(playerEntity)).append(" → Arcane Blast → ");
+                    sb.append(String.join(" + ", hitLines));
+                    if (killCount > 0) {
+                        sb.append(" | +").append(killCount * 10).append(" ATK gained (")
+                                .append(killCount).append(" kill").append(killCount > 1 ? "s" : "").append(")");
+                    }
+                    sb.append(" | Cooldown: ").append(playerEntity.getSpecialSkillCd());
+                    ui.printMessage(sb.toString());
+
+                } else {
+                    Enemy target = ui.chooseTarget(aliveEnemies);
+                    if (target == null) {
+                        return;
+                    }
+
+                    int beforeHp = target.getHp();
+                    ActionResult result = playerEntity.getSpecialSkill().execute(
+                            new ActionContext(playerEntity, List.of(target), null));
+                    applyResult(target, result);
+                    int afterHp = target.getHp();
+
+                    playerEntity.setSpecialSkillCd(3);
+
+                    ui.printSpecialSkillLine(
+                            getDisplayName(playerEntity),
+                            skillName,
+                            getDisplayName(target),
+                            beforeHp,
+                            afterHp,
+                            playerEntity.getAttack(),
+                            target.getDefense(),
+                            result,
+                            playerEntity.getSpecialSkillCd(),
+                            !target.isAlive()
+                    );
                 }
-
-                int beforeHp = target.getHp();
-                ActionResult result = playerEntity.getSpecialSkill().execute(new ActionContext(playerEntity, List.of(target), null));
-                applyResult(target, result);
-                int afterHp = target.getHp();
-
-                playerEntity.setSpecialSkillCd(3);
-
-                printSpecialSkillLine(
-                        getDisplayName(playerEntity),
-                        getSkillDisplayName(playerEntity),
-                        getDisplayName(target),
-                        beforeHp,
-                        afterHp,
-                        playerEntity.getAttack(),
-                        target.getDefense(),
-                        result,
-                        playerEntity.getSpecialSkillCd(),
-                        !target.isAlive()
-                );
                 return;
             }
 
-            System.out.println("Invalid choice. Try again.");
+            ui.printMessage("Invalid choice. Try again.");
         }
-    }
-
-    private void printDamageLine(String actorName, String actionName, String targetName,
-                                 int beforeHp, int afterHp, int attackerAtk, int targetDef, String suffix) {
-        int damage = Math.max(0, beforeHp - afterHp);
-        System.out.println(actorName + " → " + actionName + " → " + targetName + ": HP: " +
-                beforeHp + " → " + afterHp + " (dmg: " + attackerAtk + "−" + targetDef + "=" + damage + ")" +
-                (suffix == null ? "" : suffix));
-    }
-
-    private void printSpecialSkillLine(String actorName, String skillName, String targetName,
-                                       int beforeHp, int afterHp, int attackerAtk, int targetDef,
-                                       ActionResult result, int cooldown, boolean defeated) {
-        int damage = Math.max(0, beforeHp - afterHp);
-        StringBuilder line = new StringBuilder();
-        line.append(actorName)
-                .append(" → ")
-                .append(skillName)
-                .append(" → ")
-                .append(targetName)
-                .append(": HP: ")
-                .append(beforeHp)
-                .append(" → ")
-                .append(afterHp)
-                .append(" (dmg: ")
-                .append(attackerAtk)
-                .append("−")
-                .append(targetDef)
-                .append("=")
-                .append(damage)
-                .append(")");
-
-        if (hasStunEffect(result)) {
-            line.append(" | ").append(targetName).append(" STUNNED (2 turns)");
-        }
-
-
-        if (defeated) {
-            line.append(" | ").append(targetName).append(" was defeated.");
-        }
-
-        System.out.println(line);
-    }
-
-    private void printPotionLine(String actorName, int beforeHp, int afterHp, int healAmount) {
-        System.out.println(actorName + " → Item → Potion used: HP: " + beforeHp + " → " + afterHp + " (+" + healAmount + ")");
-    }
-
-    private void printSmokeBombLine(String actorName) {
-        System.out.println(actorName + " → Item → Smoke Bomb used: Enemy attacks deal 0 damage this turn + next");
-    }
-
-    private void printPowerStoneLine(String actorName, String skillName, String targetName,
-                                     int beforeHp, int afterHp, int attackerAtk, int targetDef,
-                                     ActionResult result, int cooldown) {
-        int damage = Math.max(0, beforeHp - afterHp);
-        StringBuilder line = new StringBuilder();
-        line.append(actorName)
-                .append(" → Item → Power Stone used → ")
-                .append(skillName)
-                .append(" triggered → ")
-                .append(targetName)
-                .append(": HP: ")
-                .append(beforeHp)
-                .append(" → ")
-                .append(afterHp)
-                .append(" (dmg: ")
-                .append(attackerAtk)
-                .append("−")
-                .append(targetDef)
-                .append("=")
-                .append(damage)
-                .append(")");
-
-        if (hasStunEffect(result)) {
-            line.append(" | ").append(targetName).append(" STUNNED (2 turns)");
-        }
-
-        line.append(" | Cooldown unchanged → ")
-                .append(cooldown)
-                .append(" (Power Stone does not affect cooldown)")
-                .append(" | Power Stone consumed");
-
-        System.out.println(line);
     }
 
     public void applyResult(Character target, ActionResult result) {
@@ -401,24 +356,24 @@ public class BattleManagement {
         }
     }
 
-    public Character nextTurn() {
+    public Character nextTurn(UIGame ui) {
         if (turnOrderList == null || turnOrderList.isEmpty()) {
             return null;
         }
 
         if (currentTurnIndex >= turnOrderList.size()) {
             if (isWaveCleared() && hasPendingBackup()) {
-                spawnBackupWaveAnnouncement();
+                spawnBackupWave(ui);
             }
 
-            printEndOfRound();
+            ui.printEndOfRound(player, enemies, roundNumber);
 
             currentTurnIndex = 0;
             roundNumber++;
             turnOrderList = determineTurnOrder();
 
             if (!isBattleOver()) {
-                printRoundHeader();
+                ui.printRoundHeader(roundNumber, turnOrderList);
             }
         }
 
@@ -448,18 +403,13 @@ public class BattleManagement {
         return backupWave != null && !backupWave.isEmpty() && !selectedLevel.isBackupSpawnTriggered();
     }
 
-    private void spawnBackupWaveAnnouncement() {
+    private void spawnBackupWave(UIGame ui) {
         if (selectedLevel == null || enemies == null || !hasPendingBackup()) {
             return;
         }
 
         List<Enemy> backupWave = selectedLevel.getBackupWave();
-
-        String joined = backupWave.stream()
-                .map(e -> getDisplayName(e) + " (HP: " + e.getHp() + ")")
-                .collect(Collectors.joining(" + "));
-
-        System.out.println("All initial enemies eliminated → Backup Spawn triggered! " + joined + " enter simultaneously");
+        ui.printBackupWaveAnnouncement(backupWave);
 
         enemies.addAll(backupWave);
         selectedLevel.setBackupSpawnTriggered(true);
@@ -498,178 +448,6 @@ public class BattleManagement {
         return count;
     }
 
-    private Item chooseItem(Player player) {
-        List<Item> inventory = new ArrayList<>();
-        if (player.getInventory() != null) {
-            for (Item item : player.getInventory()) {
-                if (item != null && item.isAvailable()) {
-                    inventory.add(item);
-                }
-            }
-        }
-
-        if (inventory.isEmpty()) {
-            System.out.println("No items available.");
-            return null;
-        }
-
-        while (true) {
-            System.out.println();
-            System.out.println("Choose an item:");
-            for (int i = 0; i < inventory.size(); i++) {
-                Item item = inventory.get(i);
-                System.out.printf("%d. %s (x%d)%n", i + 1, formatItemName(item), item.getQuantity());
-            }
-            System.out.println("0. Cancel");
-            System.out.print("Enter choice: ");
-
-            String input = scanner.nextLine().trim();
-            if ("0".equals(input)) {
-                return null;
-            }
-
-            try {
-                int choice = Integer.parseInt(input);
-                if (choice >= 1 && choice <= inventory.size()) {
-                    return inventory.get(choice - 1);
-                }
-            } catch (NumberFormatException ignored) {
-            }
-
-            System.out.println("Invalid choice. Try again.");
-        }
-    }
-
-    private Enemy chooseTarget(List<Enemy> enemies) {
-        if (enemies == null || enemies.isEmpty()) {
-            return null;
-        }
-
-        if (enemies.size() == 1) {
-            return enemies.get(0);
-        }
-
-        while (true) {
-            System.out.println();
-            System.out.println("Choose target:");
-            for (int i = 0; i < enemies.size(); i++) {
-                Enemy enemy = enemies.get(i);
-                System.out.printf("%d. %s - HP: %d%n", i + 1, getDisplayName(enemy), enemy.getHp());
-            }
-            System.out.print("Enter choice: ");
-
-            String input = scanner.nextLine().trim();
-            try {
-                int choice = Integer.parseInt(input);
-                if (choice >= 1 && choice <= enemies.size()) {
-                    return enemies.get(choice - 1);
-                }
-            } catch (NumberFormatException ignored) {
-            }
-
-            System.out.println("Invalid choice. Try again.");
-        }
-    }
-
-    private void printRoundHeader() {
-        System.out.println();
-        System.out.println("Round " + roundNumber);
-
-        if (roundNumber > 1) {
-            String currentTurnOrderLine = formatTurnOrderLine(turnOrderList);
-            if (!currentTurnOrderLine.equals(lastPrintedTurnOrderLine)) {
-                System.out.println(currentTurnOrderLine);
-                lastPrintedTurnOrderLine = currentTurnOrderLine;
-            }
-        }
-    }
-
-    private void printEndOfRound() {
-        System.out.print("End of Round " + roundNumber + ": ");
-        System.out.print(player.getClass().getSimpleName() + " HP: " + player.getHp() + "/" + player.getMaxHp());
-
-        for (Enemy enemy : enemies) {
-            System.out.print(" | " + getDisplayName(enemy) + " HP: " + (enemy.isAlive() ? enemy.getHp() : 0));
-            if (enemy.isStunned() && enemy.isAlive()) {
-                System.out.print(" [STUNNED]");
-            }
-        }
-
-        for (Item item : player.getInventory()) {
-            System.out.print(" | " + formatItemName(item) + ": " + item.getQuantity());
-            if (item.getQuantity() == 0 && formatItemName(item).equals(lastConsumedItemName)) {
-                System.out.print(" ← consumed");
-            }
-        }
-
-        boolean anyItemAvailable = false;
-        for (Item item : player.getInventory()) {
-            if (item != null && item.isAvailable()) {
-                anyItemAvailable = true;
-                break;
-            }
-        }
-        if (!anyItemAvailable) {
-            System.out.print(" | Item action no longer available");
-        }
-
-        SmokeBombInvulnerability smokeBomb = null;
-        for (StatusEffect effect : player.getActiveEffects()) {
-            if (effect instanceof SmokeBombInvulnerability inv) {
-                smokeBomb = inv;
-                break;
-            }
-        }
-
-        if (smokeBomb != null) {
-            System.out.print(" | Effect: " + smokeBomb.getDuration() + " turn" + (smokeBomb.getDuration() == 1 ? "" : "s") + " remaining");
-        }
-
-        System.out.print(" | Special Skills Cooldown: " + player.getSpecialSkillCd() + " round" + (player.getSpecialSkillCd() == 1 ? "" : "s"));
-        System.out.println();
-        lastConsumedItemName = null;
-    }
-
-    private String formatTurnOrderLine(List<Character> combatants) {
-        if (combatants == null || combatants.isEmpty()) {
-            return "Turn Order: None";
-        }
-
-        List<Character> sorted = new ArrayList<>(combatants);
-        sorted.sort((a, b) -> Integer.compare(b.getSpeed(), a.getSpeed()));
-
-        List<String> parts = new ArrayList<>();
-        for (Character character : sorted) {
-            parts.add(getDisplayName(character) + " (SPD " + character.getSpeed() + ")");
-        }
-
-        return "Turn Order: " + String.join(" → ", parts);
-    }
-
-    private boolean hasStunEffect(ActionResult result) {
-        if (result == null || result.getEffectsApplied() == null) {
-            return false;
-        }
-
-        for (StatusEffect effect : result.getEffectsApplied()) {
-            if (effect instanceof Stun) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private String formatItemName(Item item) {
-        if (item == null) {
-            return "Unknown";
-        }
-        return item.getClass().getSimpleName()
-                .replace("SmokeBomb", "Smoke Bomb")
-                .replace("PowerStone", "Power Stone")
-                .replace("ArcaneBlast", "Arcane Blast");
-    }
-
     private String getDisplayName(Character character) {
         if (character instanceof Enemy enemy) {
             return enemy.getDisplayName();
@@ -690,27 +468,6 @@ public class BattleManagement {
             return "Arcane Blast";
         }
         return "Special Skill";
-    }
-
-    private void printEliminatedSkip(Character current, boolean stunnedAtStart) {
-        String name = getDisplayName(current);
-
-        boolean hadStun = stunnedAtStart;
-
-        if (!hadStun && current.getActiveEffects() != null) {
-            for (StatusEffect effect : current.getActiveEffects()) {
-                if (effect instanceof Stun) {
-                    hadStun = true;
-                    break;
-                }
-            }
-        }
-
-        if (hadStun) {
-            System.out.println(name + " → ELIMINATED: Skipped | Stun expires");
-        } else {
-            System.out.println(name + " → ELIMINATED: Skipped");
-        }
     }
 
     private List<Enemy> getAliveEnemies() {
