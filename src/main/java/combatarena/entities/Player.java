@@ -2,6 +2,7 @@ package combatarena.entities;
 
 import combatarena.actions.Action;
 import combatarena.actions.BasicAttack;
+import combatarena.actions.Defend;
 import combatarena.actions.UseItemAction;
 import combatarena.actions.items.Item;
 import combatarena.actions.SpecialSkill;
@@ -25,7 +26,11 @@ public class Player extends Character {
     public List<Action> getAvailableActions() {
         List<Action> actions = new ArrayList<>();
         actions.add(new BasicAttack());
+        actions.add(new Defend());
         actions.add(new UseItemAction());
+        if (specialSkill != null) {
+            actions.add(specialSkill);
+        }
         return actions;
     }
 
@@ -48,7 +53,6 @@ public class Player extends Character {
     }
 
     public void reset() {
-        
         this.hp = this.maxHp;
         this.specialSkillCd = 0;
         this.activeEffects.clear();
