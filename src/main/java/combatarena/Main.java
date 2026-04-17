@@ -23,6 +23,7 @@ import combatarena.level.Level;
 import combatarena.level.Level1;
 import combatarena.level.Level2;
 import combatarena.level.Level3;
+import combatarena.ui.UIGame;
 import combatarena.util.ActionResult;
 
 import java.util.ArrayList;
@@ -85,11 +86,11 @@ public class Main {
                         player,
                         initialEnemies,
                         turnOrderStrategy,
-                        level,
-                        scanner
+                        level
                 );
+                UIGame uiGame = new UIGame(battle);
 
-                battle.startBattle();
+                battle.startBattle(uiGame);
 
                 if (player.isAlive()) {
                     System.out.println();
