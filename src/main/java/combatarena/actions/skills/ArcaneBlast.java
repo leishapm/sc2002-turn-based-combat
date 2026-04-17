@@ -26,9 +26,10 @@ public class ArcaneBlast extends SpecialSkill {
         if (context.getTargets() != null) {
             for (Character target : context.getTargets()) {
                 if (target != null && target.isAlive()) {
-                    int dmg = Math.max(0, context.getUser().getAttack() - target.getDefense());
-                    totalDamage += dmg;
-                    if (target.getHp() - dmg <= 0) {
+                    int rawDamage = context.getUser().getAttack();
+                    int mitigatedDamage = Math.max(0, rawDamage - target.getDefense());
+                    totalDamage += rawDamage;
+                    if (target.getHp() - mitigatedDamage <= 0) {
                         kills++;
                     }
                 }
