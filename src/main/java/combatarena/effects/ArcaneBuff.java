@@ -23,6 +23,6 @@ public class ArcaneBuff extends StatusEffect {
 
     @Override
     public void remove(Character target) {
-        
+        target.decreaseAttack(bonus);
     }
 }
