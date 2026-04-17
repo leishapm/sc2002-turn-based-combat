@@ -347,16 +347,23 @@ public class BattleManagement {
             int beforeHp = target.getHp();
             ActionResult targetResult = playerEntity.getSpecialSkill().execute(
                     new ActionContext(playerEntity, List.of(target), null));
-            int appliedDamage = target.takeDamage(targetResult.getDamageGiven());
+            int arcaneBuffCount = 0;
+            if (targetResult.getEffectsApplied() != null) {
+                arcaneBuffCount = (int) targetResult.getEffectsApplied().stream()
+                        .filter(effect -> effect instanceof ArcaneBuff)
+                        .count();
+                targetResult.getEffectsApplied().removeIf(effect -> effect instanceof ArcaneBuff);
+            }
+
+            applyResult(target, targetResult);
             int afterHp = target.getHp();
+            int appliedDamage = Math.max(0, beforeHp - afterHp);
             if (!target.isAlive()) {
                 killCount++;
             }
 
-            for (StatusEffect effect : targetResult.getEffectsApplied()) {
-                if (effect instanceof ArcaneBuff) {
-                    playerEntity.addEffect(new ArcaneBuff());
-                }
+            for (int i = 0; i < arcaneBuffCount; i++) {
+                playerEntity.addEffect(new ArcaneBuff());
             }
 
             hitLines.add(getDisplayName(target) + ": HP: " + beforeHp + " -> " + afterHp
