@@ -69,14 +69,8 @@ public class BattleManagement {
                 continue;
             }
 
-            boolean stunnedBeforeUpdate = current.isStunned();
-            current.updateEffects();
-
-            if (!current.isAlive()) {
-                ui.printEliminatedSkip(current, stunnedBeforeUpdate);
-                continue;
-            }
-
+            // Stun must skip the current and next turn. Handle stunned entities
+            // before ticking effects so they lose a turn first, then decrement duration.
             if (current.isStunned()) {
                 boolean willExpire = false;
                 if (current.getActiveEffects() != null) {
@@ -88,11 +82,18 @@ public class BattleManagement {
                     }
                 }
 
-                if (willExpire) {
-                    ui.printStunnedSkip(current, true);
-                } else {
-                    ui.printStunnedSkip(current, false);
+                ui.printStunnedSkip(current, willExpire);
+                current.updateEffects();
+                if (!current.isAlive()) {
+                    ui.printEliminatedSkip(current, true);
                 }
+                continue;
+            }
+
+            current.updateEffects();
+
+            if (!current.isAlive()) {
+                ui.printEliminatedSkip(current, false);
                 continue;
             }
 
@@ -260,6 +261,8 @@ public class BattleManagement {
 
                 if (item instanceof PowerStone) {
                     if ("Arcane Blast".equals(getSkillDisplayName(playerEntity))) {
+                        // Power Stone consumption is handled explicitly here because Arcane Blast
+                        // is resolved target-by-target to keep result application consistent.
                         item.consume();
                         executeArcaneBlast(playerEntity, new ArrayList<>(aliveEnemies), ui, true);
                     } else {
